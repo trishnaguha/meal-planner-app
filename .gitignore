@@ -7,6 +7,7 @@ __pycache__/
 venv/
 
 # ChromaDB data
+data/
 backend/data/chroma_db/
 
 # Uploads
