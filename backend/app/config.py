@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     chroma_collection_name: str = "meal_history"
     upload_dir: str = "./uploads"
     claude_model: str = "claude-sonnet-4-20250514"
+    use_vertex: bool = False
+    vertex_project_id: str = ""
+    vertex_region: str = "us-east5"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

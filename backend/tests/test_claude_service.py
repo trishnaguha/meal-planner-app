@@ -7,16 +7,13 @@ from app.services.claude_service import ClaudeService
 
 @pytest.fixture
 def mock_claude():
-    with patch("app.services.claude_service.anthropic.Anthropic") as mock_cls:
-        mock_client = MagicMock()
-        mock_cls.return_value = mock_client
+    mock_client = MagicMock()
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Hello from Claude")]
+    mock_client.messages.create.return_value = mock_response
 
-        mock_response = MagicMock()
-        mock_response.content = [MagicMock(text="Hello from Claude")]
-        mock_client.messages.create.return_value = mock_response
-
-        service = ClaudeService(api_key="test-key")
-        yield service, mock_client
+    service = ClaudeService(api_key="test-key", client=mock_client)
+    yield service, mock_client
 
 
 def test_call_returns_text(mock_claude):
