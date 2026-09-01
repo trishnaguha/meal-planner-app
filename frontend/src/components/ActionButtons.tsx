@@ -18,18 +18,22 @@ export default function ActionButtons({
       <button
         onClick={onApprove}
         disabled={disabled || approved}
-        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+          approved ? "btn-success" : "btn-accent"
+        }`}
       >
         <Check className="w-4 h-4" />
-        {approved ? "Approved" : "Approve"}
+        {approved ? "Approved" : "Approve Plan"}
       </button>
       <button
         onClick={onSwap}
         disabled={disabled || approved}
-        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="flex-1 btn-glass flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm"
       >
-        <RefreshCw className="w-4 h-4" />
-        Swap Meal Plan
+        <RefreshCw
+          className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180"
+        />
+        Swap Plan
       </button>
     </div>
   );

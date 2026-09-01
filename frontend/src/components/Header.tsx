@@ -3,14 +3,29 @@ import { UtensilsCrossed } from "lucide-react";
 
 export default function Header() {
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-      <div className="flex items-center gap-3">
-        <UtensilsCrossed className="w-6 h-6 text-emerald-600" />
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-          Meal Planner
-        </h1>
+    <header
+      className="sticky top-0 z-50 glass-static"
+      style={{ background: "var(--header-bg)" }}
+    >
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, var(--accent), var(--accent-end))",
+            }}
+          >
+            <UtensilsCrossed className="w-4 h-4 text-white" />
+          </div>
+          <h1
+            className="text-lg font-semibold tracking-tight"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Meal Planner
+          </h1>
+        </div>
+        <ThemeToggle />
       </div>
-      <ThemeToggle />
     </header>
   );
 }

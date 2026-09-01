@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, CalendarDays } from "lucide-react";
 import MealDayCard from "./MealDayCard";
 import ActionButtons from "./ActionButtons";
 import StatusIndicator from "./StatusIndicator";
@@ -15,7 +15,15 @@ interface Props {
   onApprove: () => void;
 }
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 export default function MealPlanPanel({
   mealPlan,
@@ -33,25 +41,40 @@ export default function MealPlanPanel({
   const isLoadingState = appState === "generating" || appState === "swapping";
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Next Week Meal Plan
+    <div className="glass rounded-2xl p-5 animate-fade-in-up delay-100">
+      <h2
+        className="text-base font-semibold mb-4 flex items-center gap-2"
+        style={{ color: "var(--text-primary)" }}
+      >
+        <span
+          className="w-1.5 h-5 rounded-full"
+          style={{
+            background: "linear-gradient(180deg, var(--accent), var(--accent-end))",
+          }}
+        />
+        Next Week
       </h2>
 
       {appState === "idle" && (
-        <div className="text-center py-12 text-gray-500">
-          <p>Upload your meal history to get started</p>
+        <div className="text-center py-16 animate-fade-in-up">
+          <CalendarDays
+            className="w-12 h-12 mx-auto mb-4"
+            style={{ color: "var(--text-tertiary)" }}
+          />
+          <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
+            Upload your meal history to get started
+          </p>
         </div>
       )}
 
       {appState === "ready" && (
-        <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Ready! Click Generate to create your meal plan
+        <div className="text-center py-16 animate-scale-in">
+          <p className="text-sm mb-5" style={{ color: "var(--text-secondary)" }}>
+            History loaded. Ready to plan your week.
           </p>
           <button
             onClick={onGenerate}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm transition-colors"
+            className="btn-accent inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm"
           >
             <Sparkles className="w-4 h-4" />
             Generate Meal Plan
@@ -60,49 +83,62 @@ export default function MealPlanPanel({
       )}
 
       {isLoadingState && (
-        <div className="text-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mx-auto mb-3" />
-          <p className="text-gray-500">
-            {appState === "swapping" ? "Regenerating plan..." : "Generating your meal plan..."}
+        <div className="text-center py-16 animate-fade-in-up">
+          <div
+            className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center loading-gradient"
+          >
+            <Loader2 className="w-5 h-5 animate-spin text-white" />
+          </div>
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            {appState === "swapping"
+              ? "Finding alternatives..."
+              : "Crafting your meal plan..."}
+          </p>
+          <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>
+            This may take a moment
           </p>
         </div>
       )}
 
-      {(appState === "plan_ready" || appState === "approved") && groupedByDay.length > 0 && (
-        <>
-          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-            {groupedByDay.map(({ day, meals }) => (
-              <MealDayCard key={day} day={day} meals={meals} />
-            ))}
-          </div>
-
-          {validationWarnings && validationWarnings.length > 0 && (
-            <div className="mt-3">
-              {validationWarnings.map((w, i) => (
-                <StatusIndicator key={i} status="error" message={w} />
+      {(appState === "plan_ready" || appState === "approved") &&
+        groupedByDay.length > 0 && (
+          <>
+            <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+              {groupedByDay.map(({ day, meals }, index) => (
+                <MealDayCard key={day} day={day} meals={meals} index={index} />
               ))}
             </div>
-          )}
 
-          <div className="mt-4">
-            <ActionButtons
-              onApprove={onApprove}
-              onSwap={onSwap}
-              disabled={isLoadingState}
-              approved={appState === "approved"}
-            />
-          </div>
-        </>
-      )}
+            {validationWarnings && validationWarnings.length > 0 && (
+              <div className="mt-3 space-y-1">
+                {validationWarnings.map((w, i) => (
+                  <StatusIndicator key={i} status="error" message={w} />
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4">
+              <ActionButtons
+                onApprove={onApprove}
+                onSwap={onSwap}
+                disabled={isLoadingState}
+                approved={appState === "approved"}
+              />
+            </div>
+          </>
+        )}
 
       {appState === "error" && (
-        <div className="text-center py-12">
-          <StatusIndicator status="error" message="Something went wrong. Please try again." />
+        <div className="text-center py-16 animate-fade-in-up">
+          <StatusIndicator
+            status="error"
+            message="Something went wrong"
+          />
           <button
             onClick={onGenerate}
-            className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm"
+            className="btn-accent mt-4 px-5 py-2 rounded-xl text-sm"
           >
-            Retry
+            Try Again
           </button>
         </div>
       )}

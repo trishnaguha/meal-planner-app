@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, ShoppingCart } from "lucide-react";
 import GroceryCategory from "./GroceryCategory";
 import { GroceryItem, AppState } from "@/lib/types";
 
@@ -35,7 +35,9 @@ export default function ShoppingListPanel({ groceryList, appState }: Props) {
     const text = grouped
       .map((g) => {
         const header = g.category.charAt(0).toUpperCase() + g.category.slice(1);
-        const items = g.items.map((item) => `  - ${item.name} (${item.quantity})`).join("\n");
+        const items = g.items
+          .map((item) => `  - ${item.name} (${item.quantity})`)
+          .join("\n");
         return `${header}:\n${items}`;
       })
       .join("\n\n");
@@ -49,40 +51,74 @@ export default function ShoppingListPanel({ groceryList, appState }: Props) {
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 ${isTentative ? "opacity-75" : ""}`}
+      className={`glass rounded-2xl p-5 animate-fade-in-up delay-200 transition-opacity duration-300 ${
+        isTentative ? "opacity-60" : "opacity-100"
+      }`}
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h2
+          className="text-base font-semibold flex items-center gap-2"
+          style={{ color: "var(--text-primary)" }}
+        >
+          <span
+            className="w-1.5 h-5 rounded-full"
+            style={{
+              background:
+                "linear-gradient(180deg, var(--accent), var(--accent-end))",
+            }}
+          />
           Shopping List
           {isTentative && (
-            <span className="ml-2 text-xs font-normal text-gray-400">(tentative)</span>
+            <span
+              className="text-[10px] font-normal uppercase tracking-wider ml-1 px-2 py-0.5 rounded-full"
+              style={{
+                color: "var(--text-tertiary)",
+                background: "var(--glass-bg)",
+                border: "1px solid var(--glass-border)",
+              }}
+            >
+              tentative
+            </span>
           )}
         </h2>
         <button
           onClick={copyToClipboard}
           disabled={isTentative}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="btn-glass flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
         >
           {copied ? (
             <>
-              <Check className="w-3.5 h-3.5" /> Copied
+              <Check className="w-3.5 h-3.5" style={{ color: "var(--success)" }} />
+              <span style={{ color: "var(--success)" }}>Copied</span>
             </>
           ) : (
             <>
-              <Copy className="w-3.5 h-3.5" /> Copy List
+              <Copy className="w-3.5 h-3.5" />
+              Copy
             </>
           )}
         </button>
       </div>
 
       {groceryList.length === 0 ? (
-        <p className="text-center text-gray-500 py-6 text-sm">
-          Shopping list will appear here after plan is generated
-        </p>
+        <div className="text-center py-10">
+          <ShoppingCart
+            className="w-10 h-10 mx-auto mb-3"
+            style={{ color: "var(--text-tertiary)" }}
+          />
+          <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
+            Your shopping list will appear here
+          </p>
+        </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {grouped.map(({ category, items }) => (
-            <GroceryCategory key={category} category={category} items={items} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+          {grouped.map(({ category, items }, index) => (
+            <GroceryCategory
+              key={category}
+              category={category}
+              items={items}
+              index={index}
+            />
           ))}
         </div>
       )}

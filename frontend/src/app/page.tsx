@@ -17,7 +17,6 @@ export default function Home() {
     generate,
     swap,
     approve,
-    isLoading,
   } = useMealPlan();
 
   const handleUploadComplete = () => {
@@ -42,14 +41,35 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      {/* Ambient gradient orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div
+          className="absolute w-[500px] h-[500px] rounded-full blur-[120px] opacity-20"
+          style={{
+            background: "var(--accent)",
+            top: "-10%",
+            right: "-5%",
+          }}
+        />
+        <div
+          className="absolute w-[400px] h-[400px] rounded-full blur-[120px] opacity-10"
+          style={{
+            background: "var(--accent-end)",
+            bottom: "10%",
+            left: "-5%",
+          }}
+        />
+      </div>
+
       <Header />
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
+
+      <main className="flex-1 px-4 sm:px-6 py-6 max-w-7xl mx-auto w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div className="lg:col-span-4 xl:col-span-3">
             <MealHistoryPanel onUploadComplete={handleUploadComplete} />
           </div>
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-8 xl:col-span-9">
             <MealPlanPanel
               mealPlan={mealPlan}
               appState={appState}
@@ -60,7 +80,8 @@ export default function Home() {
             />
           </div>
         </div>
-        <div className="mt-6">
+
+        <div className="mt-5">
           <ShoppingListPanel groceryList={groceryList} appState={appState} />
         </div>
       </main>

@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload } from "lucide-react";
+import { Upload, FileUp } from "lucide-react";
 
 interface Props {
   onFileSelect: (file: File) => void;
@@ -34,18 +34,31 @@ export default function FileDropZone({ onFileSelect, disabled }: Props) {
   return (
     <div
       {...getRootProps()}
-      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-        ${isDragActive ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" : "border-gray-300 dark:border-gray-600 hover:border-emerald-400"}
-        ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+      className={`drop-zone rounded-xl p-5 text-center cursor-pointer transition-all duration-300 ${
+        isDragActive ? "drop-zone-active" : ""
+      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <input {...getInputProps()} />
-      <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        {isDragActive
-          ? "Drop file here..."
-          : "Drop files here or click to upload"}
+      <div
+        className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center transition-transform duration-300"
+        style={{
+          background: isDragActive ? "var(--accent-glow)" : "var(--glass-bg)",
+          border: "1px solid var(--glass-border)",
+          transform: isDragActive ? "scale(1.1)" : "scale(1)",
+        }}
+      >
+        {isDragActive ? (
+          <FileUp className="w-5 h-5" style={{ color: "var(--accent)" }} />
+        ) : (
+          <Upload className="w-5 h-5" style={{ color: "var(--text-tertiary)" }} />
+        )}
+      </div>
+      <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+        {isDragActive ? "Drop to upload" : "Drop files here or click to browse"}
       </p>
-      <p className="text-xs text-gray-400 mt-1">.txt .csv .json .pdf</p>
+      <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>
+        .txt .csv .json .pdf
+      </p>
     </div>
   );
 }

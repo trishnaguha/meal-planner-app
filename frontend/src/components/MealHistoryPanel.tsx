@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, ChevronRight } from "lucide-react";
 import FileDropZone from "./FileDropZone";
 import StatusIndicator from "./StatusIndicator";
 import { useMealHistory } from "@/hooks/useMealHistory";
@@ -13,8 +13,14 @@ interface Props {
 
 export default function MealHistoryPanel({ onUploadComplete }: Props) {
   const [pasteText, setPasteText] = useState("");
-  const { uploadFile, uploadText, isUploading, uploadedFiles, totalMealsIndexed, error } =
-    useMealHistory();
+  const {
+    uploadFile,
+    uploadText,
+    isUploading,
+    uploadedFiles,
+    totalMealsIndexed,
+    error,
+  } = useMealHistory();
 
   const handleFileSelect = async (file: File) => {
     const result = await uploadFile(file);
@@ -31,9 +37,18 @@ export default function MealHistoryPanel({ onUploadComplete }: Props) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Meal History Input
+    <div className="glass rounded-2xl p-5 animate-fade-in-up">
+      <h2
+        className="text-base font-semibold mb-4 flex items-center gap-2"
+        style={{ color: "var(--text-primary)" }}
+      >
+        <span
+          className="w-1.5 h-5 rounded-full"
+          style={{
+            background: "linear-gradient(180deg, var(--accent), var(--accent-end))",
+          }}
+        />
+        Meal History
       </h2>
 
       <FileDropZone onFileSelect={handleFileSelect} disabled={isUploading} />
@@ -45,16 +60,23 @@ export default function MealHistoryPanel({ onUploadComplete }: Props) {
           placeholder="Or paste your meal notes here..."
           rows={4}
           disabled={isUploading}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 text-sm resize-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:opacity-50"
+          className="glass-input w-full px-3 py-2.5 rounded-xl text-sm resize-none"
         />
       </div>
 
       <button
         onClick={handleSubmit}
         disabled={isUploading || !pasteText.trim()}
-        className="mt-3 w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="btn-accent mt-3 w-full px-4 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"
       >
-        {isUploading ? "Analysing..." : "Upload & Analyse"}
+        {isUploading ? (
+          "Analysing..."
+        ) : (
+          <>
+            Upload & Analyse
+            <ChevronRight className="w-4 h-4" />
+          </>
+        )}
       </button>
 
       <StatusIndicator
@@ -63,21 +85,38 @@ export default function MealHistoryPanel({ onUploadComplete }: Props) {
       />
 
       {uploadedFiles.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+        <div
+          className="mt-4 pt-4"
+          style={{ borderTop: "1px solid var(--glass-border)" }}
+        >
+          <h3
+            className="text-xs font-medium uppercase tracking-wider mb-2"
+            style={{ color: "var(--text-tertiary)" }}
+          >
             Uploaded History
           </h3>
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {uploadedFiles.map((file, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <FileText className="w-4 h-4 text-emerald-500" />
-                {file.name}
+              <li
+                key={i}
+                className="flex items-center gap-2 text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <FileText className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
+                <span className="truncate">{file.name}</span>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-gray-500">
-            {totalMealsIndexed} meals indexed
-          </p>
+          <div
+            className="mt-3 flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
+            style={{
+              background: "var(--accent-glow)",
+              color: "var(--accent)",
+            }}
+          >
+            <span className="font-semibold">{totalMealsIndexed}</span>
+            <span>meals indexed</span>
+          </div>
         </div>
       )}
     </div>

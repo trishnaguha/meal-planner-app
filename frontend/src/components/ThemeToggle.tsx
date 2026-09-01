@@ -5,10 +5,15 @@ import { Moon, Sun } from "lucide-react";
 
 export default function ThemeToggle() {
   const [dark, setDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const saved = localStorage.getItem("theme");
-    if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    if (
+      saved === "dark" ||
+      (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    ) {
       setDark(true);
       document.documentElement.classList.add("dark");
     }
@@ -23,13 +28,24 @@ export default function ThemeToggle() {
     });
   };
 
+  if (!mounted) return <div className="w-9 h-9" />;
+
   return (
     <button
       onClick={toggle}
-      className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+      className="relative w-9 h-9 flex items-center justify-center rounded-xl btn-glass"
       aria-label="Toggle theme"
     >
-      {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      <span
+        className="transition-transform duration-300"
+        style={{ transform: dark ? "rotate(180deg)" : "rotate(0deg)" }}
+      >
+        {dark ? (
+          <Sun className="w-4 h-4 text-amber-400" />
+        ) : (
+          <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
+        )}
+      </span>
     </button>
   );
 }

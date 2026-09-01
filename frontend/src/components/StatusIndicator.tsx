@@ -8,21 +8,39 @@ interface Props {
 export default function StatusIndicator({ status, message }: Props) {
   if (status === "idle") return null;
 
-  const icons = {
-    loading: <Loader2 className="w-4 h-4 animate-spin text-blue-500" />,
-    success: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
-    error: <AlertCircle className="w-4 h-4 text-red-500" />,
+  const config = {
+    loading: {
+      icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
+      bg: "rgba(59, 130, 246, 0.1)",
+      border: "rgba(59, 130, 246, 0.2)",
+      color: "#60a5fa",
+    },
+    success: {
+      icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+      bg: "rgba(52, 211, 153, 0.1)",
+      border: "rgba(52, 211, 153, 0.2)",
+      color: "#34d399",
+    },
+    error: {
+      icon: <AlertCircle className="w-3.5 h-3.5" />,
+      bg: "rgba(248, 113, 113, 0.1)",
+      border: "rgba(248, 113, 113, 0.2)",
+      color: "#f87171",
+    },
   };
 
-  const colors = {
-    loading: "text-blue-600 dark:text-blue-400",
-    success: "text-emerald-600 dark:text-emerald-400",
-    error: "text-red-600 dark:text-red-400",
-  };
+  const c = config[status];
 
   return (
-    <div className={`flex items-center gap-2 text-sm ${colors[status]}`}>
-      {icons[status]}
+    <div
+      className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full mt-3 w-fit"
+      style={{
+        background: c.bg,
+        border: `1px solid ${c.border}`,
+        color: c.color,
+      }}
+    >
+      {c.icon}
       {message && <span>{message}</span>}
     </div>
   );
