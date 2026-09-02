@@ -9,9 +9,10 @@ import { UploadResponse } from "@/lib/types";
 
 interface Props {
   onUploadComplete: (response: UploadResponse) => void;
+  existingMealCount?: number;
 }
 
-export default function MealHistoryPanel({ onUploadComplete }: Props) {
+export default function MealHistoryPanel({ onUploadComplete, existingMealCount = 0 }: Props) {
   const [pasteText, setPasteText] = useState("");
   const {
     uploadFile,
@@ -84,7 +85,7 @@ export default function MealHistoryPanel({ onUploadComplete }: Props) {
         message={isUploading ? "Processing meal notes..." : error || undefined}
       />
 
-      {uploadedFiles.length > 0 && (
+      {(uploadedFiles.length > 0 || existingMealCount > 0) && (
         <div
           className="mt-4 pt-4"
           style={{ borderTop: "1px solid var(--glass-border)" }}
@@ -93,20 +94,22 @@ export default function MealHistoryPanel({ onUploadComplete }: Props) {
             className="text-xs font-medium uppercase tracking-wider mb-2"
             style={{ color: "var(--text-tertiary)" }}
           >
-            Uploaded History
+            {uploadedFiles.length > 0 ? "Uploaded History" : "Saved History"}
           </h3>
-          <ul className="space-y-1.5">
-            {uploadedFiles.map((file, i) => (
-              <li
-                key={i}
-                className="flex items-center gap-2 text-sm"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                <FileText className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
-                <span className="truncate">{file.name}</span>
-              </li>
-            ))}
-          </ul>
+          {uploadedFiles.length > 0 && (
+            <ul className="space-y-1.5">
+              {uploadedFiles.map((file, i) => (
+                <li
+                  key={i}
+                  className="flex items-center gap-2 text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  <FileText className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
+                  <span className="truncate">{file.name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <div
             className="mt-3 flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
             style={{
@@ -114,7 +117,7 @@ export default function MealHistoryPanel({ onUploadComplete }: Props) {
               color: "var(--accent)",
             }}
           >
-            <span className="font-semibold">{totalMealsIndexed}</span>
+            <span className="font-semibold">{totalMealsIndexed || existingMealCount}</span>
             <span>meals indexed</span>
           </div>
         </div>
