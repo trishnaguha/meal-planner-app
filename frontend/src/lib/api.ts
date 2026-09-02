@@ -5,11 +5,14 @@ import {
   MealHistoryResponse,
 } from "./types";
 
-const client = axios.create({ baseURL: "/api" });
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
+const client = axios.create({ baseURL: "/api", timeout: 600_000 });
+const directClient = axios.create({ baseURL: `${BACKEND_URL}/api`, timeout: 600_000 });
 
 export const api = {
   async uploadMeals(formData: FormData): Promise<UploadResponse> {
-    const { data } = await client.post<UploadResponse>(
+    const { data } = await directClient.post<UploadResponse>(
       "/upload-meals",
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
@@ -18,12 +21,12 @@ export const api = {
   },
 
   async generatePlan(): Promise<MealPlanResponse> {
-    const { data } = await client.post<MealPlanResponse>("/generate-plan");
+    const { data } = await directClient.post<MealPlanResponse>("/generate-plan");
     return data;
   },
 
   async swapMeal(excludedDishes: string[]): Promise<MealPlanResponse> {
-    const { data } = await client.post<MealPlanResponse>("/swap-meal", {
+    const { data } = await directClient.post<MealPlanResponse>("/swap-meal", {
       excluded_dishes: excludedDishes,
     });
     return data;
