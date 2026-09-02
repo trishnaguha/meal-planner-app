@@ -11,7 +11,7 @@ A multi-agent meal planning application that analyzes past meal history via RAG,
 | Frontend | Next.js (App Router) + Tailwind CSS |
 | Backend | Python FastAPI |
 | Agent Orchestration | LangGraph StateGraph |
-| LLM | Claude API (claude-sonnet-4-20250514) |
+| LLM | Claude API (Sonnet) via Anthropic SDK / Vertex AI |
 | Vector Database | ChromaDB (local, persistent) |
 | Embeddings | ChromaDB default (all-MiniLM-L6-v2) |
 
@@ -101,16 +101,22 @@ action = "approve"   → Store approved plan in ChromaDB → END
 
 ## Frontend Dashboard
 
+Glassmorphism design with frosted glass panels, saffron/amber accent gradients, and staggered entrance animations.
+
 Three-panel layout:
-1. **Meal History Input** — drag-and-drop file upload + paste textarea
-2. **Meal Plan View** — 7-day plan with Approve / Swap buttons
-3. **Shopping List** — categorized grocery list with Copy button
+1. **Meal History Input** — drag-and-drop file upload (.txt, .csv, .json, .pdf) + paste textarea
+2. **Meal Plan View** — 7-day plan with Approve / Swap buttons, spice-strip day cards
+3. **Shopping List** — color-coded grocery categories with Copy button
+
+On page load, the frontend queries `/api/meal-history` to check for existing data in ChromaDB. If meals are already indexed, it skips the upload step and shows the Generate button immediately.
 
 ## Data Storage
 
-ChromaDB stores two collections:
-- `meal_history` — embedded past meal records with metadata (day, frequency, tags)
+ChromaDB persists to disk at `backend/data/chroma_db/`. Data survives server restarts — no re-upload needed.
+
+- `meal_history` collection — embedded past meal records with metadata (day, frequency, tags)
 - Approved plans are added back to history to improve future recommendations
+- Large meal logs are chunked (30 lines per chunk) for reliable Claude API parsing
 
 ## Project Structure
 

@@ -44,7 +44,7 @@ Shopping Organiser
 | Frontend | Next.js (App Router), TypeScript, Tailwind CSS |
 | Backend | Python, FastAPI |
 | Agent Orchestration | LangGraph StateGraph |
-| LLM | Claude API (claude-sonnet-4-20250514) |
+| LLM | Claude API (Sonnet) via Anthropic SDK / Vertex AI |
 | Vector Database | ChromaDB (local, persistent) |
 | Embeddings | ChromaDB default (all-MiniLM-L6-v2) |
 
@@ -54,7 +54,7 @@ Shopping Organiser
 
 - Python 3.11+
 - Node.js 18+
-- An [Anthropic API key](https://console.anthropic.com/)
+- An [Anthropic API key](https://console.anthropic.com/) or Google Cloud project with Vertex AI access
 
 ### Backend Setup
 
@@ -65,7 +65,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Edit .env — add your ANTHROPIC_API_KEY, or set USE_VERTEX=true with VERTEX_PROJECT_ID
 
 uvicorn app.main:app --reload --port 8000
 ```
@@ -82,11 +82,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Usage
 
-1. **Upload meal history** — Paste text notes (e.g., `Saturday 5 keema paratha. Make cabbage`) or upload a file (.txt, .csv, .json, .pdf) in the left panel
+1. **Upload meal history** — Paste text notes (e.g., `Saturday 5 keema paratha. Make cabbage`) or upload a file (.txt, .csv, .json, .pdf) in the left panel. Large files are automatically chunked for reliable parsing.
 2. **Generate meal plan** — Click "Generate Meal Plan" to create a balanced 7-day plan based on your history
 3. **Review** — The plan shows breakfast, lunch, and dinner for each day. Past favorites are marked with a star
 4. **Swap or Approve** — Click "Swap Meal Plan" to regenerate with different dishes, or "Approve" to finalize
 5. **Shopping list** — A categorized grocery list appears automatically, grouped by Produce, Protein, Dairy, Grains & Pantry, and Spices. Copy it with one click
+
+Your meal history is persisted in ChromaDB on disk (`backend/data/chroma_db/`). After the first upload, you don't need to re-upload — the app detects existing data on page load and shows the Generate button immediately.
 
 ## API Endpoints
 
@@ -146,7 +148,10 @@ python3 -m pytest tests/ -v
 
 | Variable | Description | Default |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key | (required) |
+| `ANTHROPIC_API_KEY` | Your Anthropic API key (not needed if using Vertex AI) | `""` |
+| `USE_VERTEX` | Use Google Cloud Vertex AI instead of direct API | `false` |
+| `VERTEX_PROJECT_ID` | Google Cloud project ID (when using Vertex AI) | `""` |
+| `VERTEX_REGION` | Vertex AI region | `us-east5` |
 | `CHROMA_DB_PATH` | Path for ChromaDB persistent storage | `./data/chroma_db` |
 | `CHROMA_COLLECTION_NAME` | ChromaDB collection name | `meal_history` |
 | `UPLOAD_DIR` | Directory for uploaded files | `./uploads` |
