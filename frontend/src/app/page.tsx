@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import MealHistoryPanel from "@/components/MealHistoryPanel";
 import MealPlanPanel from "@/components/MealPlanPanel";
 import ShoppingListPanel from "@/components/ShoppingListPanel";
 import { useMealPlan } from "@/hooks/useMealPlan";
+import { api } from "@/lib/api";
 import { AppState } from "@/lib/types";
 
 export default function Home() {
   const [appState, setAppState] = useState<AppState>("idle");
+  const [existingMealCount, setExistingMealCount] = useState(0);
   const {
     mealPlan,
     groceryList,
@@ -18,6 +20,15 @@ export default function Home() {
     swap,
     approve,
   } = useMealPlan();
+
+  useEffect(() => {
+    api.getMealHistory().then((data) => {
+      if (data.total > 0) {
+        setExistingMealCount(data.total);
+        setAppState("ready");
+      }
+    }).catch(() => {});
+  }, []);
 
   const handleUploadComplete = () => {
     setAppState("ready");
@@ -67,7 +78,7 @@ export default function Home() {
       <main className="flex-1 px-4 sm:px-6 py-6 max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           <div className="lg:col-span-4 xl:col-span-3">
-            <MealHistoryPanel onUploadComplete={handleUploadComplete} />
+            <MealHistoryPanel onUploadComplete={handleUploadComplete} existingMealCount={existingMealCount} />
           </div>
           <div className="lg:col-span-8 xl:col-span-9">
             <MealPlanPanel
