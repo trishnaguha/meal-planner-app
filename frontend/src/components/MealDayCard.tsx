@@ -16,7 +16,7 @@ const SLOT_LABELS: Record<string, { short: string; color: string }> = {
 export default function MealDayCard({ day, meals, index }: Props) {
   return (
     <div
-      className="spice-strip rounded-xl p-3.5 transition-all duration-300 animate-fade-in-up"
+      className="spice-strip rounded-xl p-3.5 pl-4 transition-all duration-300 animate-fade-in-up overflow-hidden"
       style={{
         background: "var(--glass-bg)",
         animationDelay: `${index * 60}ms`,

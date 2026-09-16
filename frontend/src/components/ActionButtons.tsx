@@ -18,7 +18,7 @@ export default function ActionButtons({
       <button
         onClick={onApprove}
         disabled={disabled || approved}
-        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl text-sm transition-all duration-200 ${
           approved ? "btn-success" : "btn-accent"
         }`}
       >
@@ -28,7 +28,7 @@ export default function ActionButtons({
       <button
         onClick={onSwap}
         disabled={disabled || approved}
-        className="flex-1 btn-glass flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm"
+        className="flex-1 btn-glass flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl text-sm"
       >
         <RefreshCw
           className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180"

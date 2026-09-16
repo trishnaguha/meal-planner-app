@@ -84,7 +84,7 @@ export default function ShoppingListPanel({ groceryList, appState }: Props) {
         <button
           onClick={copyToClipboard}
           disabled={isTentative}
-          className="btn-glass flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
+          className="btn-glass flex items-center gap-1.5 px-3 py-2 min-h-[44px] min-w-[44px] rounded-lg text-xs"
         >
           {copied ? (
             <>
@@ -111,7 +111,7 @@ export default function ShoppingListPanel({ groceryList, appState }: Props) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {grouped.map(({ category, items }, index) => (
             <GroceryCategory
               key={category}
