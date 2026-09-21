@@ -11,7 +11,7 @@ Return a JSON object:
   "warnings": ["list of minor issues that are acceptable"]
 }
 
-Be strict about duplicates — flag any dish that appears more than once.
+A dish may appear up to twice in the week. Only flag a dish as a duplicate error if it appears 3 or more times.
 Be lenient about nutrition — flag only if an entire day has no vegetables or no protein."""
 
 MEAL_PLAN_USER_TEMPLATE = """Validate this 7-day meal plan:

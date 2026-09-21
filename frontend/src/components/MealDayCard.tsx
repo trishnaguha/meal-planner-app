@@ -50,7 +50,7 @@ export default function MealDayCard({ day, meals, index }: Props) {
                 style={{ color: "var(--text-secondary)" }}
               >
                 {meal.dish}
-                {meal.reason === "past favorite" && (
+                {meal.reason === "from history" && (
                   <Star className="inline w-3 h-3 ml-1 text-amber-400 fill-amber-400" />
                 )}
               </span>
