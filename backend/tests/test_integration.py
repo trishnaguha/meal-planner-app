@@ -26,17 +26,15 @@ def mock_all_llm_calls():
              "prep_notes": "", "tags": ["indian", "protein"]}
         ]
 
-        mock_chroma_plan.query_meals.return_value = [
+        mock_chroma_plan.get_all_meals.return_value = [
             {"id": "m1", "document": "keema paratha", "metadata": {"day": "Saturday", "dish": "keema paratha", "tags": "indian"}}
         ]
 
         mock_plan.call_json.return_value = [
-            {"day": "Monday", "meal_slot": "breakfast", "dish": "Oatmeal", "prep_time_min": 10,
-             "reason": "new for variety", "ingredients": ["oats", "milk"]},
             {"day": "Monday", "meal_slot": "lunch", "dish": "keema paratha", "prep_time_min": 30,
-             "reason": "past favorite", "ingredients": ["meat", "flour"]},
+             "reason": "from history", "ingredients": ["meat", "flour"]},
             {"day": "Monday", "meal_slot": "dinner", "dish": "Grilled chicken", "prep_time_min": 25,
-             "reason": "new for variety", "ingredients": ["chicken", "rice"]},
+             "reason": "new", "ingredients": ["chicken", "rice"]},
         ]
 
         mock_val.call_json.return_value = {"is_valid": True, "errors": [], "warnings": []}
@@ -58,6 +56,6 @@ def test_full_flow_upload_then_generate(client, mock_all_llm_calls):
     gen_resp = client.post("/api/generate-plan")
     assert gen_resp.status_code == 200
     data = gen_resp.json()
-    assert len(data["meal_plan"]) == 3
+    assert len(data["meal_plan"]) == 2
     assert len(data["grocery_list"]) == 2
     assert data["validation_status"] == "passed"
