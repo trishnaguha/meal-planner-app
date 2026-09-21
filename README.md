@@ -33,8 +33,8 @@ Shopping Organiser
 | Agent | Purpose |
 |---|---|
 | **History Analyser** | Parses freeform meal notes (text or file upload), extracts structured records, embeds into ChromaDB |
-| **Meal Planner** | Retrieves preferences via RAG, generates a 7-day meal plan balancing nutrition and variety |
-| **Validator** | Ground-truth checks at two points — verifies dishes exist in history, no repeats, balanced nutrition, valid ingredients |
+| **Meal Planner** | Retrieves full meal history, generates a 7-day lunch and dinner plan prioritizing the user's own dishes |
+| **Validator** | Ground-truth checks at two points — verifies dishes exist in history, allows up to 2 repeats per week, balanced nutrition, valid ingredients |
 | **Shopping Organiser** | Extracts ingredients from the plan, deduplicates, groups by grocery section |
 
 ## Tech Stack
@@ -83,8 +83,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Usage
 
 1. **Upload meal history** — Paste text notes (e.g., `Saturday 5 keema paratha. Make cabbage`) or upload a file (.txt, .csv, .json, .pdf) in the left panel. Large files are automatically chunked for reliable parsing.
-2. **Generate meal plan** — Click "Generate Meal Plan" to create a balanced 7-day plan based on your history
-3. **Review** — The plan shows breakfast, lunch, and dinner for each day. Past favorites are marked with a star
+2. **Generate meal plan** — Click "Generate Meal Plan" to create a balanced 7-day lunch and dinner plan based on your history. Weekday meals (Mon–Fri) are drawn from your uploaded history; weekend meals (Sat–Sun) may include new dishes for variety.
+3. **Review** — The plan shows lunch and dinner for each day. Dishes from your history are marked with a star.
 4. **Swap or Approve** — Click "Swap Meal Plan" to regenerate with different dishes, or "Approve" to finalize
 5. **Shopping list** — A categorized grocery list appears automatically, grouped by Produce, Protein, Dairy, Grains & Pantry, and Spices. Copy it with one click
 
