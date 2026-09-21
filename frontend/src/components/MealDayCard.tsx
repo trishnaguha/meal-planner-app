@@ -8,7 +8,6 @@ interface Props {
 }
 
 const SLOT_LABELS: Record<string, { short: string; color: string }> = {
-  breakfast: { short: "B", color: "#f59e0b" },
   lunch: { short: "L", color: "#f97316" },
   dinner: { short: "D", color: "#ef4444" },
 };

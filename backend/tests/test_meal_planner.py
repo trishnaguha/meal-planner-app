@@ -11,7 +11,7 @@ def mock_services():
         patch("app.agents.meal_planner.claude_service") as mock_claude,
         patch("app.agents.meal_planner.chroma_service") as mock_chroma,
     ):
-        mock_chroma.query_meals.return_value = [
+        mock_chroma.get_all_meals.return_value = [
             {
                 "id": "meal_1",
                 "document": "keema paratha - Saturday - indian,protein",
@@ -27,19 +27,19 @@ def mock_services():
         mock_claude.call_json.return_value = [
             {
                 "day": "Monday",
-                "meal_slot": "breakfast",
-                "dish": "Oatmeal with fruit",
-                "prep_time_min": 10,
-                "reason": "new for variety",
-                "ingredients": ["oats", "banana", "honey"],
-            },
-            {
-                "day": "Monday",
                 "meal_slot": "lunch",
                 "dish": "keema paratha",
                 "prep_time_min": 30,
-                "reason": "past favorite",
+                "reason": "from history",
                 "ingredients": ["ground meat", "flour", "onion"],
+            },
+            {
+                "day": "Monday",
+                "meal_slot": "dinner",
+                "dish": "dal rice",
+                "prep_time_min": 25,
+                "reason": "from history",
+                "ingredients": ["lentils", "rice", "spices"],
             },
         ]
         yield mock_claude, mock_chroma
@@ -52,8 +52,8 @@ def test_meal_planner_generates_plan(mock_services):
     result = meal_planner_node(state)
 
     assert len(result["meal_plan"]) == 2
-    assert result["meal_plan"][0]["dish"] == "Oatmeal with fruit"
-    assert result["meal_plan"][1]["reason"] == "past favorite"
+    assert result["meal_plan"][0]["dish"] == "keema paratha"
+    assert result["meal_plan"][1]["reason"] == "from history"
 
 
 def test_meal_planner_queries_chromadb(mock_services):
@@ -62,7 +62,7 @@ def test_meal_planner_queries_chromadb(mock_services):
 
     meal_planner_node(state)
 
-    mock_chroma.query_meals.assert_called_once()
+    mock_chroma.get_all_meals.assert_called_once()
 
 
 def test_meal_planner_passes_exclusions(mock_services):
