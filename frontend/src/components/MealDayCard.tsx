@@ -16,7 +16,7 @@ const SLOT_LABELS: Record<string, { short: string; color: string }> = {
 export default function MealDayCard({ day, meals, index }: Props) {
   return (
     <div
-      className="spice-strip rounded-xl p-3.5 transition-all duration-300 animate-fade-in-up"
+      className="spice-strip rounded-xl p-3.5 pl-4 transition-all duration-300 animate-fade-in-up overflow-hidden"
       style={{
         background: "var(--glass-bg)",
         animationDelay: `${index * 60}ms`,
@@ -50,7 +50,7 @@ export default function MealDayCard({ day, meals, index }: Props) {
                 style={{ color: "var(--text-secondary)" }}
               >
                 {meal.dish}
-                {meal.reason === "past favorite" && (
+                {meal.reason === "from history" && (
                   <Star className="inline w-3 h-3 ml-1 text-amber-400 fill-amber-400" />
                 )}
               </span>

@@ -10,17 +10,12 @@ from app.services.claude_service import claude_service
 
 
 def meal_planner_node(state: MealPlannerState) -> dict:
-    history_results = chroma_service.query_meals(
-        "popular meals favorites frequent dishes variety", n_results=20
-    )
+    history_results = chroma_service.get_all_meals()
 
     history_context = "\n".join(
         f"- {r['document']} (day: {r['metadata'].get('day', 'N/A')})"
         for r in history_results
-    )
-
-    if not history_context:
-        history_context = "No meal history available yet. Generate a balanced plan from scratch."
+    ) or "No meal history available. Generate a balanced plan from scratch."
 
     excluded = state.get("excluded_dishes", [])
     if excluded:
@@ -43,7 +38,7 @@ def meal_planner_node(state: MealPlannerState) -> dict:
             "meal_slot": item.get("meal_slot", ""),
             "dish": item.get("dish", ""),
             "prep_time_min": item.get("prep_time_min", 0),
-            "reason": item.get("reason", "new for variety"),
+            "reason": item.get("reason", "new"),
             "ingredients": item.get("ingredients", []),
         }
         meal_plan.append(meal)

@@ -28,12 +28,12 @@ export default function ThemeToggle() {
     });
   };
 
-  if (!mounted) return <div className="w-9 h-9" />;
+  if (!mounted) return <div className="w-11 h-11" />;
 
   return (
     <button
       onClick={toggle}
-      className="relative w-9 h-9 flex items-center justify-center rounded-xl btn-glass"
+      className="relative w-11 h-11 flex items-center justify-center rounded-xl btn-glass"
       aria-label="Toggle theme"
     >
       <span

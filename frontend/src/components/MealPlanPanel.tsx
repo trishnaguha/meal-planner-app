@@ -74,7 +74,7 @@ export default function MealPlanPanel({
           </p>
           <button
             onClick={onGenerate}
-            className="btn-accent inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm"
+            className="btn-accent inline-flex items-center gap-2 px-6 py-3 min-h-[44px] rounded-xl text-sm"
           >
             <Sparkles className="w-4 h-4" />
             Generate Meal Plan
@@ -103,7 +103,7 @@ export default function MealPlanPanel({
       {(appState === "plan_ready" || appState === "approved") &&
         groupedByDay.length > 0 && (
           <>
-            <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-[60vh] sm:max-h-[520px] overflow-y-auto overscroll-contain pr-1">
               {groupedByDay.map(({ day, meals }, index) => (
                 <MealDayCard key={day} day={day} meals={meals} index={index} />
               ))}
@@ -136,7 +136,7 @@ export default function MealPlanPanel({
           />
           <button
             onClick={onGenerate}
-            className="btn-accent mt-4 px-5 py-2 rounded-xl text-sm"
+            className="btn-accent mt-4 px-5 py-3 min-h-[44px] rounded-xl text-sm"
           >
             Try Again
           </button>

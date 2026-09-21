@@ -61,14 +61,14 @@ export default function MealHistoryPanel({ onUploadComplete, existingMealCount =
           placeholder="Or paste your meal notes here..."
           rows={4}
           disabled={isUploading}
-          className="glass-input w-full px-3 py-2.5 rounded-xl text-sm resize-none"
+          className="glass-input w-full px-3 py-2.5 rounded-xl text-base sm:text-sm resize-none"
         />
       </div>
 
       <button
         onClick={handleSubmit}
         disabled={isUploading || !pasteText.trim()}
-        className="btn-accent mt-3 w-full px-4 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"
+        className="btn-accent mt-3 w-full px-4 py-3 min-h-[44px] rounded-xl text-sm flex items-center justify-center gap-2"
       >
         {isUploading ? (
           "Analysing..."

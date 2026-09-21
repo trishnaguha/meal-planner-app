@@ -16,7 +16,7 @@ def meal_validator_node(state: MealPlannerState) -> dict:
     verified = []
     unverified = []
     for meal in meal_plan:
-        if meal.get("reason") == "past favorite":
+        if meal.get("reason") == "from history":
             if chroma_service.meal_exists(meal["dish"]):
                 verified.append(meal["dish"])
             else:
