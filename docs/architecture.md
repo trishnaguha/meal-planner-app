@@ -60,16 +60,16 @@ Parses freeform meal notes (text paste or file upload: .txt, .csv, .json, .pdf) 
 
 ### Agent 2: Meal Planner
 
-Retrieves user preferences from ChromaDB via RAG. Generates a 7-day meal plan (breakfast/lunch/dinner) balancing:
-- Protein / carb / vegetable variety
-- No dish repeats within a week
-- Day-of-week patterns from history
-- Past favorites vs. new suggestions for variety
+Retrieves the user's full meal history from ChromaDB. Generates a 7-day meal plan (lunch and dinner only — 14 meals total) with:
+- Weekday meals (Mon–Fri) drawn from the user's uploaded meal history
+- Weekend meals (Sat–Sun) may introduce new dishes for variety
+- A dish may appear at most twice in the week
+- Protein / carb / vegetable balance across each day
 
 ### Agent 3: Validator
 
 Runs at two points in the pipeline:
-1. After Meal Planner: verifies dishes exist in history, checks no repeats, validates nutritional balance
+1. After Meal Planner: verifies dishes exist in history, flags dishes appearing 3+ times, validates nutritional balance
 2. After Shopping Organiser: verifies ingredients map to meals, checks for phantom items, validates quantities
 
 Max 2 retries per validation point. After 2 failures, passes with warning flags.
@@ -105,7 +105,7 @@ Glassmorphism design with frosted glass panels, saffron/amber accent gradients, 
 
 Three-panel layout:
 1. **Meal History Input** — drag-and-drop file upload (.txt, .csv, .json, .pdf) + paste textarea
-2. **Meal Plan View** — 7-day plan with Approve / Swap buttons, spice-strip day cards
+2. **Meal Plan View** — 7-day lunch and dinner plan with Approve / Swap buttons, spice-strip day cards. History dishes are marked with a star.
 3. **Shopping List** — color-coded grocery categories with Copy button
 
 On page load, the frontend queries `/api/meal-history` to check for existing data in ChromaDB. If meals are already indexed, it skips the upload step and shows the Generate button immediately.
