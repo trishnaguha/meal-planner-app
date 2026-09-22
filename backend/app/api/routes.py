@@ -2,11 +2,14 @@ import os
 import uuid
 
 from fastapi import APIRouter, File, Form, UploadFile
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.agents.graph import build_graph
+from app.agents.single_meal_swap import generate_swap_suggestion, apply_swap
 from app.config import settings
 from app.services.chromadb_service import chroma_service
+from app.services.preference_service import preference_service
 
 router = APIRouter(prefix="/api")
 
@@ -21,6 +24,22 @@ class SwapRequest(BaseModel):
 
 class ApproveRequest(BaseModel):
     meal_plan: list[dict] | None = None
+
+
+class PreferenceRequest(BaseModel):
+    dietary_preference: str
+
+
+class SwapSingleMealRequest(BaseModel):
+    day: str
+    meal_slot: str
+    current_dish: str
+
+
+class AcceptSwapRequest(BaseModel):
+    day: str
+    meal_slot: str
+    new_meal: dict
 
 
 @router.post("/upload-meals")
@@ -156,3 +175,57 @@ async def get_shopping_list():
         "grocery_list": _current_plan.get("grocery_list", []),
         "shopping_validation_status": _current_plan.get("shopping_validation_status", ""),
     }
+
+
+@router.get("/preferences")
+async def get_preferences():
+    prefs = preference_service.get()
+    return prefs or {}
+
+
+@router.post("/preferences")
+async def save_preferences(request: PreferenceRequest):
+    return preference_service.save(request.dietary_preference)
+
+
+@router.post("/swap-single-meal")
+async def swap_single_meal(request: SwapSingleMealRequest):
+    current_plan_meals = _current_plan.get("meal_plan", [])
+    if not current_plan_meals:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "No meal plan generated yet"},
+        )
+
+    result = generate_swap_suggestion(
+        day=request.day,
+        meal_slot=request.meal_slot,
+        current_dish=request.current_dish,
+        current_plan=current_plan_meals,
+    )
+    return result
+
+
+@router.post("/accept-swap")
+async def accept_swap_endpoint(request: AcceptSwapRequest):
+    global _current_plan
+    current_plan_meals = _current_plan.get("meal_plan", [])
+    if not current_plan_meals:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "No meal plan to update"},
+        )
+
+    result = apply_swap(
+        current_plan=current_plan_meals,
+        day=request.day,
+        meal_slot=request.meal_slot,
+        new_meal=request.new_meal,
+    )
+    _current_plan = {
+        **_current_plan,
+        "meal_plan": result["meal_plan"],
+        "grocery_list": result["grocery_list"],
+        "shopping_validation_status": result["shopping_validation_status"],
+    }
+    return result

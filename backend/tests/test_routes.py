@@ -94,3 +94,105 @@ def test_get_meal_history(client):
         assert response.status_code == 200
         data = response.json()
         assert len(data["meals"]) == 1
+
+
+def test_get_preferences_empty(client):
+    with patch("app.api.routes.preference_service") as mock_pref:
+        mock_pref.get.return_value = None
+        response = client.get("/api/preferences")
+        assert response.status_code == 200
+        assert response.json() == {}
+
+
+def test_save_preferences(client):
+    with patch("app.api.routes.preference_service") as mock_pref:
+        mock_pref.save.return_value = {"dietary_preference": "high protein"}
+        response = client.post(
+            "/api/preferences",
+            json={"dietary_preference": "high protein"},
+        )
+        assert response.status_code == 200
+        assert response.json()["dietary_preference"] == "high protein"
+        mock_pref.save.assert_called_once_with("high protein")
+
+
+def test_get_preferences_returns_saved(client):
+    with patch("app.api.routes.preference_service") as mock_pref:
+        mock_pref.get.return_value = {"dietary_preference": "protein and vegetables"}
+        response = client.get("/api/preferences")
+        assert response.status_code == 200
+        assert response.json()["dietary_preference"] == "protein and vegetables"
+
+
+def test_swap_single_meal(client):
+    with patch("app.api.routes.generate_swap_suggestion") as mock_swap:
+        mock_swap.return_value = {
+            "suggestion": {
+                "day": "Monday", "meal_slot": "lunch", "dish": "keema paratha",
+                "prep_time_min": 30, "reason": "from history",
+                "ingredients": ["meat", "flour"],
+            },
+            "validation_status": "passed",
+            "validation_warnings": [],
+        }
+        # Set _current_plan so the route has a plan to reference
+        from app.api import routes
+        routes._current_plan = {
+            "meal_plan": [
+                {"day": "Monday", "meal_slot": "lunch", "dish": "dal rice",
+                 "prep_time_min": 20, "reason": "from history", "ingredients": ["lentils"]},
+            ],
+        }
+
+        response = client.post(
+            "/api/swap-single-meal",
+            json={"day": "Monday", "meal_slot": "lunch", "current_dish": "dal rice"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["suggestion"]["dish"] == "keema paratha"
+        assert data["validation_status"] == "passed"
+
+
+def test_swap_single_meal_no_plan(client):
+    from app.api import routes
+    routes._current_plan = {}
+
+    response = client.post(
+        "/api/swap-single-meal",
+        json={"day": "Monday", "meal_slot": "lunch", "current_dish": "dal rice"},
+    )
+    assert response.status_code == 400
+
+
+def test_accept_swap(client):
+    with patch("app.api.routes.apply_swap") as mock_apply:
+        from app.api import routes
+        routes._current_plan = {
+            "meal_plan": [
+                {"day": "Monday", "meal_slot": "lunch", "dish": "dal rice",
+                 "prep_time_min": 20, "reason": "from history", "ingredients": ["lentils"]},
+            ],
+        }
+        mock_apply.return_value = {
+            "meal_plan": [
+                {"day": "Monday", "meal_slot": "lunch", "dish": "keema paratha",
+                 "prep_time_min": 30, "reason": "from history", "ingredients": ["meat"]},
+            ],
+            "grocery_list": [{"name": "meat", "quantity": "1kg", "category": "protein", "used_in": ["keema paratha"]}],
+            "shopping_validation_status": "passed",
+        }
+
+        response = client.post(
+            "/api/accept-swap",
+            json={
+                "day": "Monday",
+                "meal_slot": "lunch",
+                "new_meal": {"day": "Monday", "meal_slot": "lunch", "dish": "keema paratha",
+                             "prep_time_min": 30, "reason": "from history", "ingredients": ["meat"]},
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["meal_plan"][0]["dish"] == "keema paratha"
+        assert len(data["grocery_list"]) > 0
