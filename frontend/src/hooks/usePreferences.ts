@@ -13,7 +13,7 @@ export function usePreferences() {
     api
       .getPreferences()
       .then((data) => {
-        setPreference(data.preference || "");
+        setPreference(data.dietary_preference || "");
         setIsLoaded(true);
       })
       .catch(() => {

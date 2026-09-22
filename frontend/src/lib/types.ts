@@ -38,8 +38,9 @@ export interface MealPlanResponse {
 }
 
 export interface SwapSingleMealResponse {
-  suggested_meal: PlannedMeal;
-  reason: string;
+  suggestion: PlannedMeal;
+  validation_status: string;
+  validation_warnings: string[];
 }
 
 export interface MealHistoryResponse {

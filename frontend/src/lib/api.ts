@@ -61,14 +61,14 @@ export const api = {
     return data;
   },
 
-  async getPreferences(): Promise<{ preference: string }> {
-    const { data } = await client.get<{ preference: string }>("/preferences");
+  async getPreferences(): Promise<{ dietary_preference?: string }> {
+    const { data } = await client.get<{ dietary_preference?: string }>("/preferences");
     return data;
   },
 
-  async savePreferences(preference: string): Promise<{ status: string }> {
-    const { data } = await client.post<{ status: string }>("/preferences", {
-      preference,
+  async savePreferences(dietary_preference: string): Promise<{ dietary_preference: string }> {
+    const { data } = await client.post<{ dietary_preference: string }>("/preferences", {
+      dietary_preference,
     });
     return data;
   },
@@ -76,8 +76,7 @@ export const api = {
   async swapSingleMeal(
     day: string,
     mealSlot: string,
-    currentDish: string,
-    preference?: string
+    currentDish: string
   ): Promise<SwapSingleMealResponse> {
     const { data } = await directClient.post<SwapSingleMealResponse>(
       "/swap-single-meal",
@@ -85,7 +84,6 @@ export const api = {
         day,
         meal_slot: mealSlot,
         current_dish: currentDish,
-        preference,
       },
       { timeout: 60_000 }
     );
@@ -93,13 +91,15 @@ export const api = {
   },
 
   async acceptSwap(
-    originalMeal: PlannedMeal,
+    day: string,
+    mealSlot: string,
     newMeal: PlannedMeal
   ): Promise<MealPlanResponse> {
     const { data } = await directClient.post<MealPlanResponse>(
       "/accept-swap",
       {
-        original_meal: originalMeal,
+        day,
+        meal_slot: mealSlot,
         new_meal: newMeal,
       },
       { timeout: 90_000 }

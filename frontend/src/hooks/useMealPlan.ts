@@ -76,13 +76,13 @@ export function useMealPlan() {
   const swapSingleMeal = async (
     day: string,
     mealSlot: string,
-    currentDish: string,
-    preference?: string
+    currentDish: string
   ) => {
     setSwappingMeal({ day, mealSlot });
+    setSwapSuggestion(null);
     setError(null);
     try {
-      const data = await api.swapSingleMeal(day, mealSlot, currentDish, preference);
+      const data = await api.swapSingleMeal(day, mealSlot, currentDish);
       const originalMeal = mealPlan.find(
         (m) => m.day === day && m.meal_slot === mealSlot
       );
@@ -91,7 +91,7 @@ export function useMealPlan() {
           day,
           mealSlot,
           originalMeal,
-          suggestedMeal: data.suggested_meal,
+          suggestedMeal: data.suggestion,
         });
       }
       return data;
@@ -99,8 +99,6 @@ export function useMealPlan() {
       setError(err instanceof Error ? err.message : "Failed to swap meal");
       setSwappingMeal(null);
       return null;
-    } finally {
-      setSwappingMeal(null);
     }
   };
 
@@ -110,7 +108,8 @@ export function useMealPlan() {
     setError(null);
     try {
       const data = await api.acceptSwap(
-        swapSuggestion.originalMeal,
+        swapSuggestion.day,
+        swapSuggestion.mealSlot,
         swapSuggestion.suggestedMeal
       );
       setMealPlan(data.meal_plan);
@@ -118,6 +117,7 @@ export function useMealPlan() {
       setValidationStatus(data.validation_status);
       setValidationWarnings(data.validation_warnings || []);
       setSwapSuggestion(null);
+      setSwappingMeal(null);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to accept swap");
