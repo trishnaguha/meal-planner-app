@@ -3,15 +3,17 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import MealHistoryPanel from "@/components/MealHistoryPanel";
+import PreferencesPanel from "@/components/PreferencesPanel";
 import MealPlanPanel from "@/components/MealPlanPanel";
 import ShoppingListPanel from "@/components/ShoppingListPanel";
 import { useMealPlan } from "@/hooks/useMealPlan";
 import { api } from "@/lib/api";
-import { AppState } from "@/lib/types";
+import { AppState, PlannedMeal } from "@/lib/types";
 
 export default function Home() {
   const [appState, setAppState] = useState<AppState>("idle");
   const [existingMealCount, setExistingMealCount] = useState(0);
+  const [isAccepting, setIsAccepting] = useState(false);
   const {
     mealPlan,
     groceryList,
@@ -19,6 +21,11 @@ export default function Home() {
     generate,
     swap,
     approve,
+    swapSingleMeal,
+    acceptSwap,
+    rejectSwap,
+    swapSuggestion,
+    swappingMeal,
   } = useMealPlan();
 
   useEffect(() => {
@@ -51,6 +58,24 @@ export default function Home() {
     if (success) setAppState("approved");
   };
 
+  const handleSwapSingleMeal = async (
+    day: string,
+    mealSlot: string,
+    currentDish: string
+  ) => {
+    await swapSingleMeal(day, mealSlot, currentDish);
+  };
+
+  const handleAcceptSwap = async () => {
+    setIsAccepting(true);
+    const success = await acceptSwap();
+    setIsAccepting(false);
+  };
+
+  const handleRejectSwap = () => {
+    rejectSwap();
+  };
+
   return (
     <div className="min-h-screen min-h-dvh flex flex-col relative">
       {/* Ambient gradient orbs */}
@@ -79,6 +104,9 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           <div className="lg:col-span-4 xl:col-span-3">
             <MealHistoryPanel onUploadComplete={handleUploadComplete} existingMealCount={existingMealCount} />
+            <div className="mt-5">
+              <PreferencesPanel />
+            </div>
           </div>
           <div className="lg:col-span-8 xl:col-span-9">
             <MealPlanPanel
@@ -88,6 +116,12 @@ export default function Home() {
               onGenerate={handleGenerate}
               onSwap={handleSwap}
               onApprove={handleApprove}
+              onSwapMeal={handleSwapSingleMeal}
+              swappingMeal={swappingMeal}
+              swapSuggestion={swapSuggestion}
+              onAcceptSwap={handleAcceptSwap}
+              onRejectSwap={handleRejectSwap}
+              isAccepting={isAccepting}
             />
           </div>
         </div>

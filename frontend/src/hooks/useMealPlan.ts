@@ -11,6 +11,16 @@ export function useMealPlan() {
   const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [swapSuggestion, setSwapSuggestion] = useState<{
+    day: string;
+    mealSlot: string;
+    originalMeal: PlannedMeal;
+    suggestedMeal: PlannedMeal;
+  } | null>(null);
+  const [swappingMeal, setSwappingMeal] = useState<{
+    day: string;
+    mealSlot: string;
+  } | null>(null);
 
   const generate = async () => {
     setIsLoading(true);
@@ -63,6 +73,64 @@ export function useMealPlan() {
     }
   };
 
+  const swapSingleMeal = async (
+    day: string,
+    mealSlot: string,
+    currentDish: string,
+    preference?: string
+  ) => {
+    setSwappingMeal({ day, mealSlot });
+    setError(null);
+    try {
+      const data = await api.swapSingleMeal(day, mealSlot, currentDish, preference);
+      const originalMeal = mealPlan.find(
+        (m) => m.day === day && m.meal_slot === mealSlot
+      );
+      if (originalMeal) {
+        setSwapSuggestion({
+          day,
+          mealSlot,
+          originalMeal,
+          suggestedMeal: data.suggested_meal,
+        });
+      }
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to swap meal");
+      setSwappingMeal(null);
+      return null;
+    } finally {
+      setSwappingMeal(null);
+    }
+  };
+
+  const acceptSwap = async () => {
+    if (!swapSuggestion) return false;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await api.acceptSwap(
+        swapSuggestion.originalMeal,
+        swapSuggestion.suggestedMeal
+      );
+      setMealPlan(data.meal_plan);
+      setGroceryList(data.grocery_list);
+      setValidationStatus(data.validation_status);
+      setValidationWarnings(data.validation_warnings || []);
+      setSwapSuggestion(null);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to accept swap");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const rejectSwap = () => {
+    setSwapSuggestion(null);
+  };
+
   return {
     mealPlan,
     groceryList,
@@ -73,5 +141,10 @@ export function useMealPlan() {
     approve,
     isLoading,
     error,
+    swapSingleMeal,
+    acceptSwap,
+    rejectSwap,
+    swapSuggestion,
+    swappingMeal,
   };
 }
