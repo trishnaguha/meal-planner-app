@@ -37,6 +37,12 @@ export interface MealPlanResponse {
   shopping_validation_status: string;
 }
 
+export interface SwapSingleMealResponse {
+  suggestion: PlannedMeal;
+  validation_status: string;
+  validation_warnings: string[];
+}
+
 export interface MealHistoryResponse {
   meals: { id: string; document: string; metadata: Record<string, string> }[];
   total: number;

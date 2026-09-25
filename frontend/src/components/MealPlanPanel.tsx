@@ -13,6 +13,18 @@ interface Props {
   onGenerate: () => void;
   onSwap: () => void;
   onApprove: () => void;
+  onSwapMeal?: (day: string, mealSlot: string, currentDish: string) => void;
+  swappingMeal?: { day: string; mealSlot: string } | null;
+  swapSuggestion?: {
+    day: string;
+    mealSlot: string;
+    originalMeal: PlannedMeal;
+    suggestedMeal: PlannedMeal;
+  } | null;
+  onAcceptSwap?: () => void;
+  onRejectSwap?: () => void;
+  isAccepting?: boolean;
+  swapError?: string | null;
 }
 
 const DAYS = [
@@ -32,6 +44,13 @@ export default function MealPlanPanel({
   onGenerate,
   onSwap,
   onApprove,
+  onSwapMeal,
+  swappingMeal,
+  swapSuggestion,
+  onAcceptSwap,
+  onRejectSwap,
+  isAccepting,
+  swapError,
 }: Props) {
   const groupedByDay = DAYS.map((day) => ({
     day,
@@ -105,9 +124,26 @@ export default function MealPlanPanel({
           <>
             <div className="space-y-2.5 max-h-[60vh] sm:max-h-[520px] overflow-y-auto overscroll-contain pr-1">
               {groupedByDay.map(({ day, meals }, index) => (
-                <MealDayCard key={day} day={day} meals={meals} index={index} />
+                <MealDayCard
+                  key={day}
+                  day={day}
+                  meals={meals}
+                  index={index}
+                  onSwapMeal={onSwapMeal}
+                  swappingMeal={swappingMeal}
+                  swapSuggestion={swapSuggestion}
+                  onAcceptSwap={onAcceptSwap}
+                  onRejectSwap={onRejectSwap}
+                  isAccepting={isAccepting}
+                />
               ))}
             </div>
+
+            {swapError && (
+              <div className="mt-3">
+                <StatusIndicator status="error" message={swapError} />
+              </div>
+            )}
 
             {validationWarnings && validationWarnings.length > 0 && (
               <div className="mt-3 space-y-1">

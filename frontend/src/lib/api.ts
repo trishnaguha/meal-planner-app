@@ -3,6 +3,8 @@ import {
   UploadResponse,
   MealPlanResponse,
   MealHistoryResponse,
+  SwapSingleMealResponse,
+  PlannedMeal,
 } from "./types";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
@@ -56,6 +58,52 @@ export const api = {
     shopping_validation_status: string;
   }> {
     const { data } = await client.get("/shopping-list");
+    return data;
+  },
+
+  async getPreferences(): Promise<{ dietary_preference?: string }> {
+    const { data } = await client.get<{ dietary_preference?: string }>("/preferences");
+    return data;
+  },
+
+  async savePreferences(dietary_preference: string): Promise<{ dietary_preference: string }> {
+    const { data } = await client.post<{ dietary_preference: string }>("/preferences", {
+      dietary_preference,
+    });
+    return data;
+  },
+
+  async swapSingleMeal(
+    day: string,
+    mealSlot: string,
+    currentDish: string
+  ): Promise<SwapSingleMealResponse> {
+    const { data } = await directClient.post<SwapSingleMealResponse>(
+      "/swap-single-meal",
+      {
+        day,
+        meal_slot: mealSlot,
+        current_dish: currentDish,
+      },
+      { timeout: 60_000 }
+    );
+    return data;
+  },
+
+  async acceptSwap(
+    day: string,
+    mealSlot: string,
+    newMeal: PlannedMeal
+  ): Promise<MealPlanResponse> {
+    const { data } = await directClient.post<MealPlanResponse>(
+      "/accept-swap",
+      {
+        day,
+        meal_slot: mealSlot,
+        new_meal: newMeal,
+      },
+      { timeout: 90_000 }
+    );
     return data;
   },
 };
