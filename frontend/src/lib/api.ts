@@ -4,6 +4,8 @@ import {
   MealPlanResponse,
   MealHistoryResponse,
   SwapSingleMealResponse,
+  SuggestBreakfastResponse,
+  PlanMutationResponse,
   PlannedMeal,
 } from "./types";
 
@@ -94,14 +96,43 @@ export const api = {
     day: string,
     mealSlot: string,
     newMeal: PlannedMeal
-  ): Promise<MealPlanResponse> {
-    const { data } = await directClient.post<MealPlanResponse>(
+  ): Promise<PlanMutationResponse> {
+    const { data } = await directClient.post<PlanMutationResponse>(
       "/accept-swap",
       {
         day,
         meal_slot: mealSlot,
         new_meal: newMeal,
       },
+      { timeout: 90_000 }
+    );
+    return data;
+  },
+
+  async suggestBreakfast(day: string): Promise<SuggestBreakfastResponse> {
+    const { data } = await directClient.post<SuggestBreakfastResponse>(
+      "/suggest-breakfast",
+      { day },
+      { timeout: 60_000 }
+    );
+    return data;
+  },
+
+  async acceptBreakfast(
+    day: string,
+    newMeal: PlannedMeal
+  ): Promise<PlanMutationResponse> {
+    const { data } = await directClient.post<PlanMutationResponse>(
+      "/accept-breakfast",
+      { day, new_meal: newMeal },
+      { timeout: 90_000 }
+    );
+    return data;
+  },
+
+  async removeBreakfast(day: string): Promise<PlanMutationResponse> {
+    const { data } = await directClient.delete<PlanMutationResponse>(
+      `/breakfast/${encodeURIComponent(day)}`,
       { timeout: 90_000 }
     );
     return data;

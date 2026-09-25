@@ -112,8 +112,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 3. **Generate meal plan** — Click "Generate Meal Plan" to create a balanced 7-day lunch and dinner plan based on your history. Weekday meals (Mon–Fri) are drawn from your uploaded history; weekend meals (Sat–Sun) may include new dishes for variety.
 4. **Review** — The plan shows lunch and dinner for each day. Dishes from your history are marked with a star.
 5. **Swap individual meals** — Hover over any meal and click the swap icon. The app uses your dietary preference (if set) and meal history to suggest a replacement. Accept or reject the suggestion — only that one meal changes, not the rest of the plan. The shopping list auto-updates on accept.
-6. **Swap entire plan or Approve** — Click "Swap Plan" to regenerate the full week with different dishes, or "Approve" to finalize.
-7. **Shopping list** — A categorized grocery list appears automatically, grouped by Produce, Protein, Dairy, Grains & Pantry, and Spices. Copy it with one click.
+6. **Add a breakfast** *(optional)* — Plans are generated with lunch and dinner only. Any day can be given a breakfast on demand: the "+ Breakfast" trigger on a day card asks the LLM for one breakfast grounded in your meal history via RAG — inventing one when your history has no breakfast dishes — validated by the Validator agent before it is offered. Accepting it rebuilds and re-validates the shopping list; the breakfast can then be swapped or removed like any other meal.
+7. **Swap entire plan or Approve** — Click "Swap Plan" to regenerate the full week with different dishes, or "Approve" to finalize.
+8. **Shopping list** — A categorized grocery list appears automatically, grouped by Produce, Protein, Dairy, Grains & Pantry, and Spices. Copy it with one click.
 
 Your meal history is persisted in ChromaDB on disk (`backend/data/chroma_db/`). After the first upload, you don't need to re-upload — the app detects existing data on page load and shows the Generate button immediately.
 
@@ -126,6 +127,9 @@ Your meal history is persisted in ChromaDB on disk (`backend/data/chroma_db/`). 
 | POST | `/api/swap-meal` | Regenerate entire plan excluding rejected dishes |
 | POST | `/api/swap-single-meal` | Get a single replacement meal suggestion via LLM + RAG |
 | POST | `/api/accept-swap` | Apply a single meal swap and regenerate the shopping list |
+| POST | `/api/suggest-breakfast` | Get a breakfast suggestion for one day via LLM + RAG |
+| POST | `/api/accept-breakfast` | Add the breakfast to the plan and regenerate the shopping list |
+| DELETE | `/api/breakfast/{day}` | Remove a day's breakfast and regenerate the shopping list |
 | POST | `/api/approve-plan` | Approve and store the finalized plan |
 | GET | `/api/preferences` | Get saved dietary preferences |
 | POST | `/api/preferences` | Save dietary preferences (natural language) |

@@ -1,5 +1,5 @@
-import { Star, Clock, RefreshCw, Loader2 } from "lucide-react";
-import { PlannedMeal } from "@/lib/types";
+import { Star, Clock, RefreshCw, Loader2, Plus, X } from "lucide-react";
+import { MealSuggestion, PlannedMeal } from "@/lib/types";
 import SwapSuggestion from "./SwapSuggestion";
 
 interface Props {
@@ -7,19 +7,17 @@ interface Props {
   meals: PlannedMeal[];
   index: number;
   onSwapMeal?: (day: string, mealSlot: string, currentDish: string) => void;
-  swappingMeal?: { day: string; mealSlot: string } | null;
-  swapSuggestion?: {
-    day: string;
-    mealSlot: string;
-    originalMeal: PlannedMeal;
-    suggestedMeal: PlannedMeal;
-  } | null;
-  onAcceptSwap?: () => void;
-  onRejectSwap?: () => void;
+  mealSuggestion?: MealSuggestion | null;
+  pendingMeal?: { day: string; mealSlot: string } | null;
+  onAcceptSuggestion?: () => void;
+  onRejectSuggestion?: () => void;
+  onAddBreakfast?: (day: string) => void;
+  onRemoveBreakfast?: (day: string) => void;
   isAccepting?: boolean;
 }
 
 const SLOT_LABELS: Record<string, { short: string; color: string }> = {
+  breakfast: { short: "B", color: "#eab308" },
   lunch: { short: "L", color: "#f97316" },
   dinner: { short: "D", color: "#ef4444" },
 };
@@ -29,12 +27,22 @@ export default function MealDayCard({
   meals,
   index,
   onSwapMeal,
-  swappingMeal,
-  swapSuggestion,
-  onAcceptSwap,
-  onRejectSwap,
+  mealSuggestion,
+  pendingMeal,
+  onAcceptSuggestion,
+  onRejectSuggestion,
+  onAddBreakfast,
+  onRemoveBreakfast,
   isAccepting = false,
 }: Props) {
+  const hasBreakfast = meals.some((m) => m.meal_slot === "breakfast");
+  const isAddingBreakfast =
+    pendingMeal?.day === day && pendingMeal?.mealSlot === "breakfast";
+  const breakfastSuggestion =
+    mealSuggestion?.kind === "breakfast" && mealSuggestion.day === day
+      ? mealSuggestion
+      : null;
+
   return (
     <div
       className="spice-strip rounded-xl p-3.5 pl-4 transition-all duration-300 animate-fade-in-up overflow-hidden"
@@ -43,12 +51,40 @@ export default function MealDayCard({
         animationDelay: `${index * 60}ms`,
       }}
     >
-      <h3
-        className="font-semibold text-sm mb-2.5 tracking-tight"
-        style={{ color: "var(--text-primary)" }}
-      >
-        {day}
-      </h3>
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <h3
+          className="font-semibold text-sm tracking-tight"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {day}
+        </h3>
+        {!hasBreakfast && onAddBreakfast && (
+          <button
+            onClick={() => onAddBreakfast(day)}
+            disabled={isAddingBreakfast}
+            className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg hover:bg-white/5 transition-colors shrink-0"
+            style={{ color: "var(--text-tertiary)" }}
+            aria-label="Add breakfast"
+          >
+            {isAddingBreakfast ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Plus className="w-3 h-3" />
+            )}
+            Breakfast
+          </button>
+        )}
+      </div>
+      {breakfastSuggestion && onAcceptSuggestion && onRejectSuggestion && (
+        <div className="mb-2">
+          <SwapSuggestion
+            meal={breakfastSuggestion.suggestedMeal}
+            onAccept={onAcceptSuggestion}
+            onReject={onRejectSuggestion}
+            isAccepting={isAccepting}
+          />
+        </div>
+      )}
       <div className="space-y-2">
         {meals.map((meal, i) => {
           const slot = SLOT_LABELS[meal.meal_slot] || {
@@ -56,8 +92,8 @@ export default function MealDayCard({
             color: "var(--text-tertiary)",
           };
           const isSwapping =
-            swappingMeal?.day === day &&
-            swappingMeal?.mealSlot === meal.meal_slot;
+            pendingMeal?.day === day &&
+            pendingMeal?.mealSlot === meal.meal_slot;
           return (
             <div key={i}>
               <div className="flex items-start gap-2.5 text-sm group">
@@ -102,16 +138,25 @@ export default function MealDayCard({
                     )}
                   </button>
                 )}
+                {meal.meal_slot === "breakfast" && onRemoveBreakfast && (
+                  <button
+                    onClick={() => onRemoveBreakfast(day)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-white/5 shrink-0"
+                    aria-label="Remove breakfast"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-              {swapSuggestion &&
-                swapSuggestion.day === day &&
-                swapSuggestion.mealSlot === meal.meal_slot &&
-                onAcceptSwap &&
-                onRejectSwap && (
+              {mealSuggestion?.kind === "swap" &&
+                mealSuggestion.day === day &&
+                mealSuggestion.mealSlot === meal.meal_slot &&
+                onAcceptSuggestion &&
+                onRejectSuggestion && (
                   <SwapSuggestion
-                    meal={swapSuggestion.suggestedMeal}
-                    onAccept={onAcceptSwap}
-                    onReject={onRejectSwap}
+                    meal={mealSuggestion.suggestedMeal}
+                    onAccept={onAcceptSuggestion}
+                    onReject={onRejectSuggestion}
                     isAccepting={isAccepting}
                   />
                 )}

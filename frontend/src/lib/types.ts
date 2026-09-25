@@ -43,6 +43,32 @@ export interface SwapSingleMealResponse {
   validation_warnings: string[];
 }
 
+export interface SuggestBreakfastResponse {
+  suggestion: PlannedMeal;
+  validation_status: string;
+  validation_warnings: string[];
+}
+
+export interface MealSuggestion {
+  kind: "swap" | "breakfast";
+  day: string;
+  mealSlot: string;
+  /** Absent for breakfast — it replaces nothing. */
+  originalMeal?: PlannedMeal;
+  suggestedMeal: PlannedMeal;
+}
+
+/**
+ * What the plan-mutation endpoints actually return. Unlike MealPlanResponse,
+ * these carry no plan-level validation_status or validation_warnings — the
+ * backend re-validates only the shopping list after a mutation.
+ */
+export interface PlanMutationResponse {
+  meal_plan: PlannedMeal[];
+  grocery_list: GroceryItem[];
+  shopping_validation_status: string;
+}
+
 export interface MealHistoryResponse {
   meals: { id: string; document: string; metadata: Record<string, string> }[];
   total: number;

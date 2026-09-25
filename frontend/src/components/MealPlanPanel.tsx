@@ -4,7 +4,7 @@ import { Loader2, Sparkles, CalendarDays } from "lucide-react";
 import MealDayCard from "./MealDayCard";
 import ActionButtons from "./ActionButtons";
 import StatusIndicator from "./StatusIndicator";
-import { PlannedMeal, AppState } from "@/lib/types";
+import { PlannedMeal, AppState, MealSuggestion } from "@/lib/types";
 
 interface Props {
   mealPlan: PlannedMeal[];
@@ -14,15 +14,12 @@ interface Props {
   onSwap: () => void;
   onApprove: () => void;
   onSwapMeal?: (day: string, mealSlot: string, currentDish: string) => void;
-  swappingMeal?: { day: string; mealSlot: string } | null;
-  swapSuggestion?: {
-    day: string;
-    mealSlot: string;
-    originalMeal: PlannedMeal;
-    suggestedMeal: PlannedMeal;
-  } | null;
-  onAcceptSwap?: () => void;
-  onRejectSwap?: () => void;
+  pendingMeal?: { day: string; mealSlot: string } | null;
+  mealSuggestion?: MealSuggestion | null;
+  onAcceptSuggestion?: () => void;
+  onRejectSuggestion?: () => void;
+  onAddBreakfast?: (day: string) => void;
+  onRemoveBreakfast?: (day: string) => void;
   isAccepting?: boolean;
   swapError?: string | null;
 }
@@ -45,10 +42,12 @@ export default function MealPlanPanel({
   onSwap,
   onApprove,
   onSwapMeal,
-  swappingMeal,
-  swapSuggestion,
-  onAcceptSwap,
-  onRejectSwap,
+  pendingMeal,
+  mealSuggestion,
+  onAcceptSuggestion,
+  onRejectSuggestion,
+  onAddBreakfast,
+  onRemoveBreakfast,
   isAccepting,
   swapError,
 }: Props) {
@@ -130,10 +129,12 @@ export default function MealPlanPanel({
                   meals={meals}
                   index={index}
                   onSwapMeal={onSwapMeal}
-                  swappingMeal={swappingMeal}
-                  swapSuggestion={swapSuggestion}
-                  onAcceptSwap={onAcceptSwap}
-                  onRejectSwap={onRejectSwap}
+                  pendingMeal={pendingMeal}
+                  mealSuggestion={mealSuggestion}
+                  onAcceptSuggestion={onAcceptSuggestion}
+                  onRejectSuggestion={onRejectSuggestion}
+                  onAddBreakfast={onAddBreakfast}
+                  onRemoveBreakfast={onRemoveBreakfast}
                   isAccepting={isAccepting}
                 />
               ))}

@@ -148,7 +148,7 @@ def test_generate_swap_excludes_current_plan_dishes(mock_all_services, current_p
 @pytest.fixture
 def mock_apply_services():
     with (
-        patch("app.agents.single_meal_swap.claude_service") as mock_claude,
+        patch("app.agents.shopping_organiser.claude_service") as mock_claude,
     ):
         mock_claude.call_json.side_effect = [
             [{"name": "lentils", "quantity": "500g", "category": "grains_pantry", "used_in": ["dal"]}],

@@ -22,10 +22,12 @@ export default function Home() {
     swap,
     approve,
     swapSingleMeal,
-    acceptSwap,
-    rejectSwap,
-    swapSuggestion,
-    swappingMeal,
+    suggestBreakfast,
+    removeBreakfast,
+    acceptSuggestion,
+    rejectSuggestion,
+    mealSuggestion,
+    pendingMeal,
     error,
   } = useMealPlan();
 
@@ -67,14 +69,22 @@ export default function Home() {
     await swapSingleMeal(day, mealSlot, currentDish);
   };
 
-  const handleAcceptSwap = async () => {
+  const handleAddBreakfast = async (day: string) => {
+    await suggestBreakfast(day);
+  };
+
+  const handleRemoveBreakfast = async (day: string) => {
+    await removeBreakfast(day);
+  };
+
+  const handleAcceptSuggestion = async () => {
     setIsAccepting(true);
-    const success = await acceptSwap();
+    await acceptSuggestion();
     setIsAccepting(false);
   };
 
-  const handleRejectSwap = () => {
-    rejectSwap();
+  const handleRejectSuggestion = () => {
+    rejectSuggestion();
   };
 
   return (
@@ -118,10 +128,12 @@ export default function Home() {
               onSwap={handleSwap}
               onApprove={handleApprove}
               onSwapMeal={handleSwapSingleMeal}
-              swappingMeal={swappingMeal}
-              swapSuggestion={swapSuggestion}
-              onAcceptSwap={handleAcceptSwap}
-              onRejectSwap={handleRejectSwap}
+              pendingMeal={pendingMeal}
+              mealSuggestion={mealSuggestion}
+              onAcceptSuggestion={handleAcceptSuggestion}
+              onRejectSuggestion={handleRejectSuggestion}
+              onAddBreakfast={handleAddBreakfast}
+              onRemoveBreakfast={handleRemoveBreakfast}
               isAccepting={isAccepting}
               swapError={error}
             />

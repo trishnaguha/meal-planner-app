@@ -1,4 +1,5 @@
-from app.agents.state import PlannedMeal, GroceryItem
+from app.agents.state import PlannedMeal
+from app.agents.shopping_organiser import rebuild_grocery_list
 from app.prompts.single_meal_swap import (
     RAG_QUERY_SYSTEM_PROMPT,
     RAG_QUERY_USER_TEMPLATE,
@@ -8,14 +9,6 @@ from app.prompts.single_meal_swap import (
     NO_PREFERENCE,
     SINGLE_MEAL_VALIDATOR_SYSTEM_PROMPT,
     SINGLE_MEAL_VALIDATOR_USER_TEMPLATE,
-)
-from app.prompts.shopping_organiser import (
-    SYSTEM_PROMPT as SHOPPING_SYSTEM_PROMPT,
-    USER_TEMPLATE as SHOPPING_USER_TEMPLATE,
-)
-from app.prompts.validator import (
-    SHOPPING_LIST_SYSTEM_PROMPT,
-    SHOPPING_LIST_USER_TEMPLATE,
 )
 from app.services.preference_service import preference_service
 from app.services.chromadb_service import chroma_service
@@ -171,51 +164,10 @@ def apply_swap(
         else:
             updated_plan.append(meal)
 
-    # Regenerate shopping list
-    meal_plan_text = "\n".join(
-        f"{m['day']} {m['meal_slot']}: {m['dish']} - ingredients: {', '.join(m.get('ingredients', []))}"
-        for m in updated_plan
-    )
-    raw_list = claude_service.call_json(
-        SHOPPING_SYSTEM_PROMPT,
-        SHOPPING_USER_TEMPLATE.format(meal_plan_text=meal_plan_text),
-    )
-    if isinstance(raw_list, dict):
-        raw_list = [raw_list]
-
-    grocery_list: list[GroceryItem] = []
-    for item in raw_list:
-        grocery_list.append({
-            "name": item.get("name", ""),
-            "quantity": item.get("quantity", ""),
-            "category": item.get("category", ""),
-            "used_in": item.get("used_in", []),
-        })
-
-    # Validate shopping list
-    shopping_list_text = "\n".join(
-        f"{item['name']} ({item['quantity']}) [{item['category']}] - used in: {', '.join(item['used_in'])}"
-        for item in grocery_list
-    )
-    shopping_validation = claude_service.call_json(
-        SHOPPING_LIST_SYSTEM_PROMPT,
-        SHOPPING_LIST_USER_TEMPLATE.format(
-            meal_plan_text=meal_plan_text,
-            shopping_list_text=shopping_list_text,
-        ),
-    )
-
-    shopping_errors = shopping_validation.get("errors", [])
-    shopping_warnings = shopping_validation.get("warnings", [])
-    if shopping_errors:
-        shopping_status = "failed"
-    elif shopping_warnings:
-        shopping_status = "passed_with_warnings"
-    else:
-        shopping_status = "passed"
+    rebuilt = rebuild_grocery_list(updated_plan)
 
     return {
         "meal_plan": updated_plan,
-        "grocery_list": grocery_list,
-        "shopping_validation_status": shopping_status,
+        "grocery_list": rebuilt["grocery_list"],
+        "shopping_validation_status": rebuilt["shopping_validation_status"],
     }

@@ -26,6 +26,9 @@ vi.mock("@/lib/api", () => ({
     savePreferences: vi.fn(),
     swapSingleMeal: vi.fn(),
     acceptSwap: vi.fn(),
+    suggestBreakfast: vi.fn(),
+    acceptBreakfast: vi.fn(),
+    removeBreakfast: vi.fn(),
   },
 }));
 
@@ -145,5 +148,68 @@ describe("per-meal swap, end to end", () => {
 
     await screen.findByText("Paneer Wrap");
     expect(screen.queryByText("Network Error")).not.toBeInTheDocument();
+  });
+});
+
+describe("per-day breakfast, end to end", () => {
+  it("adds a breakfast end to end and can remove it again", async () => {
+    const user = userEvent.setup();
+    const breakfast = {
+      day: "Monday", meal_slot: "breakfast", dish: "Poha",
+      prep_time_min: 15, reason: "new", ingredients: ["flattened rice"],
+    };
+    vi.mocked(api.suggestBreakfast).mockResolvedValue({
+      suggestion: breakfast, validation_status: "passed", validation_warnings: [],
+    });
+    vi.mocked(api.acceptBreakfast).mockResolvedValue({
+      ...PLAN_RESPONSE,
+      meal_plan: [breakfast, ...PLAN_RESPONSE.meal_plan],
+    });
+    vi.mocked(api.removeBreakfast).mockResolvedValue(PLAN_RESPONSE);
+
+    await renderPlannedWeek(user);
+
+    await user.click(screen.getByLabelText("Add breakfast"));
+    await screen.findByText("Poha");
+
+    await user.click(screen.getByLabelText("Accept suggestion"));
+    await waitFor(() =>
+      expect(screen.queryByLabelText("Add breakfast")).not.toBeInTheDocument()
+    );
+
+    await user.click(screen.getByLabelText("Remove breakfast"));
+
+    await waitFor(() =>
+      expect(screen.queryByText("Poha")).not.toBeInTheDocument()
+    );
+    expect(api.removeBreakfast).toHaveBeenCalledWith("Monday");
+  });
+
+  it("re-requests a breakfast after the user rejects one", async () => {
+    // Review Focus 1, through the DOM: the click must reach the handler.
+    const user = userEvent.setup();
+    const make = (dish: string) => ({
+      suggestion: {
+        day: "Monday", meal_slot: "breakfast", dish,
+        prep_time_min: 15, reason: "new", ingredients: ["oats"],
+      },
+      validation_status: "passed",
+      validation_warnings: [],
+    });
+    vi.mocked(api.suggestBreakfast)
+      .mockResolvedValueOnce(make("Poha"))
+      .mockResolvedValueOnce(make("Masala Oats"));
+
+    await renderPlannedWeek(user);
+
+    await user.click(screen.getByLabelText("Add breakfast"));
+    await screen.findByText("Poha");
+    await user.click(screen.getByLabelText("Reject suggestion"));
+    await waitFor(() => expect(screen.queryByText("Poha")).not.toBeInTheDocument());
+
+    await user.click(screen.getByLabelText("Add breakfast"));
+
+    await screen.findByText("Masala Oats");
+    expect(api.suggestBreakfast).toHaveBeenCalledTimes(2);
   });
 });
