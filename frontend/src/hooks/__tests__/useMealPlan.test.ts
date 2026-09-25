@@ -194,4 +194,56 @@ describe("useMealPlan per-meal swap", () => {
     });
     expect(result.current.swappingMeal).toBeNull();
   });
+
+  it("ignores a stale response when a second slot swap supersedes the first", async () => {
+    const result = await renderWithPlan();
+
+    let resolveFirst: (v: SwapSingleMealResponse) => void = () => {};
+    let resolveSecond: (v: SwapSingleMealResponse) => void = () => {};
+    vi.mocked(api.swapSingleMeal)
+      .mockReturnValueOnce(
+        new Promise<SwapSingleMealResponse>((r) => {
+          resolveFirst = r;
+        })
+      )
+      .mockReturnValueOnce(
+        new Promise<SwapSingleMealResponse>((r) => {
+          resolveSecond = r;
+        })
+      );
+
+    act(() => {
+      void result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
+    });
+    act(() => {
+      void result.current.swapSingleMeal("Monday", "dinner", "Roti Sabzi");
+    });
+
+    // The superseded first request settles last.
+    await act(async () => {
+      resolveFirst(suggestionResponse("Stale Dish"));
+    });
+
+    // Still waiting on the dinner request, so the dinner slot keeps its spinner.
+    expect(result.current.swappingMeal).toEqual({ day: "Monday", mealSlot: "dinner" });
+    expect(result.current.swapSuggestion).toBeNull();
+
+    await act(async () => {
+      resolveSecond({
+        ...suggestionResponse("Veg Pulao"),
+        suggestion: {
+          day: "Monday",
+          meal_slot: "dinner",
+          dish: "Veg Pulao",
+          prep_time_min: 35,
+          reason: "new",
+          ingredients: ["rice"],
+        },
+      });
+    });
+
+    expect(result.current.swappingMeal).toBeNull();
+    expect(result.current.swapSuggestion?.mealSlot).toBe("dinner");
+    expect(result.current.swapSuggestion?.suggestedMeal.dish).toBe("Veg Pulao");
+  });
 });

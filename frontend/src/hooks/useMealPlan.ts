@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { PlannedMeal, GroceryItem } from "@/lib/types";
 
@@ -21,6 +21,7 @@ export function useMealPlan() {
     day: string;
     mealSlot: string;
   } | null>(null);
+  const swapRequestId = useRef(0);
 
   const generate = async () => {
     setIsLoading(true);
@@ -78,11 +79,13 @@ export function useMealPlan() {
     mealSlot: string,
     currentDish: string
   ) => {
+    const requestId = ++swapRequestId.current;
     setSwappingMeal({ day, mealSlot });
     setSwapSuggestion(null);
     setError(null);
     try {
       const data = await api.swapSingleMeal(day, mealSlot, currentDish);
+      if (requestId !== swapRequestId.current) return null;
       const originalMeal = mealPlan.find(
         (m) => m.day === day && m.meal_slot === mealSlot
       );
@@ -96,15 +99,19 @@ export function useMealPlan() {
       }
       return data;
     } catch (err) {
+      if (requestId !== swapRequestId.current) return null;
       setError(err instanceof Error ? err.message : "Failed to swap meal");
       return null;
     } finally {
-      setSwappingMeal(null);
+      if (requestId === swapRequestId.current) {
+        setSwappingMeal(null);
+      }
     }
   };
 
   const acceptSwap = async () => {
     if (!swapSuggestion) return false;
+    swapRequestId.current += 1;
     setIsLoading(true);
     setError(null);
     try {
@@ -129,6 +136,7 @@ export function useMealPlan() {
   };
 
   const rejectSwap = () => {
+    swapRequestId.current += 1;
     setSwapSuggestion(null);
     setSwappingMeal(null);
   };
