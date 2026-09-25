@@ -79,3 +79,13 @@ def test_no_preference_is_empty():
 def test_validator_system_prompt_exists():
     assert len(BREAKFAST_VALIDATOR_SYSTEM_PROMPT) > 0
     assert "breakfast" in BREAKFAST_VALIDATOR_SYSTEM_PROMPT.lower()
+
+
+def test_retry_feedback_template_formats():
+    from app.prompts.breakfast import RETRY_FEEDBACK_TEMPLATE
+
+    result = RETRY_FEEDBACK_TEMPLATE.format(
+        rejected_notes='- "dal rice" (Duplicate dish: dal rice)',
+    )
+    assert "dal rice" in result
+    assert "reject" in result.lower()

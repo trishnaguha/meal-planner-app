@@ -130,6 +130,11 @@ export function useMealPlan() {
         mealSlot: "breakfast",
         suggestedMeal: data.suggestion,
       });
+      // The Validator gated this suggestion; a verdict the user never sees is
+      // a gate that did not run for them.
+      setValidationWarnings(
+        data.validation_status === "passed" ? [] : data.validation_warnings || []
+      );
       return data;
     } catch (err) {
       if (requestId !== swapRequestId.current) return null;
@@ -156,15 +161,22 @@ export function useMealPlan() {
               mealSuggestion.mealSlot,
               mealSuggestion.suggestedMeal
             );
+      // The server response is authoritative about the plan itself, so it
+      // lands even when this accept has been superseded.
       setMealPlan(data.meal_plan);
       setGroceryList(data.grocery_list);
       // These endpoints re-validate the shopping list only; the plan-level
       // warnings belong to the plan that just changed, so clear them.
       setValidationWarnings([]);
-      setMealSuggestion(null);
+      // The suggestion slot, though, may already hold a newer suggestion.
+      if (requestId === swapRequestId.current) {
+        setMealSuggestion(null);
+      }
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to accept suggestion");
+      if (requestId === swapRequestId.current) {
+        setError(err instanceof Error ? err.message : "Failed to accept suggestion");
+      }
       return false;
     } finally {
       setIsLoading(false);

@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useMealPlan } from "@/hooks/useMealPlan";
 import { api } from "@/lib/api";
-import type { MealPlanResponse, SwapSingleMealResponse } from "@/lib/types";
+import type {
+  MealPlanResponse,
+  PlanMutationResponse,
+  SwapSingleMealResponse,
+} from "@/lib/types";
 
 vi.mock("@/lib/api", () => ({
   api: {
@@ -425,6 +429,83 @@ describe("useMealPlan breakfast", () => {
 
     expect(result.current.error).toBe("Network Error");
     expect(result.current.pendingMeal).toBeNull();
+  });
+
+  it("does not clear a newer suggestion when a superseded accept settles", async () => {
+    const result = await renderWithPlan();
+    vi.mocked(api.swapSingleMeal).mockResolvedValueOnce(suggestionResponse("Paneer Wrap"));
+    await act(async () => {
+      await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
+    });
+
+    let resolveAccept: (v: PlanMutationResponse) => void = () => {};
+    vi.mocked(api.acceptSwap).mockReturnValue(
+      new Promise<PlanMutationResponse>((r) => {
+        resolveAccept = r;
+      })
+    );
+    act(() => {
+      void result.current.acceptSuggestion();
+    });
+
+    // While the accept is in flight the user asks for a breakfast elsewhere.
+    vi.mocked(api.suggestBreakfast).mockResolvedValue(breakfastResponse("Poha"));
+    await act(async () => {
+      await result.current.suggestBreakfast("Tuesday");
+    });
+    expect(result.current.mealSuggestion?.kind).toBe("breakfast");
+
+    await act(async () => {
+      resolveAccept(PLAN_RESPONSE);
+    });
+
+    expect(result.current.mealSuggestion?.kind).toBe("breakfast");
+    expect(result.current.mealSuggestion?.day).toBe("Tuesday");
+  });
+
+  it("does not surface an error from a superseded accept", async () => {
+    const result = await renderWithPlan();
+    vi.mocked(api.swapSingleMeal).mockResolvedValueOnce(suggestionResponse("Paneer Wrap"));
+    await act(async () => {
+      await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
+    });
+
+    let rejectAccept: (e: Error) => void = () => {};
+    vi.mocked(api.acceptSwap).mockReturnValue(
+      new Promise<PlanMutationResponse>((_resolve, reject) => {
+        rejectAccept = reject;
+      })
+    );
+    act(() => {
+      void result.current.acceptSuggestion();
+    });
+
+    vi.mocked(api.suggestBreakfast).mockResolvedValue(breakfastResponse("Poha"));
+    await act(async () => {
+      await result.current.suggestBreakfast("Tuesday");
+    });
+
+    await act(async () => {
+      rejectAccept(new Error("accept failed"));
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.mealSuggestion?.kind).toBe("breakfast");
+  });
+
+  it("surfaces the validator warnings that came with the suggestion", async () => {
+    vi.mocked(api.suggestBreakfast).mockResolvedValue({
+      suggestion: BREAKFAST,
+      validation_status: "passed_with_warnings",
+      validation_warnings: ["light on protein"],
+    });
+    const result = await renderWithPlan();
+
+    await act(async () => {
+      await result.current.suggestBreakfast("Monday");
+    });
+
+    expect(result.current.validationWarnings).toEqual(["light on protein"]);
   });
 
   it("drops a pending breakfast suggestion when the breakfast is removed", async () => {

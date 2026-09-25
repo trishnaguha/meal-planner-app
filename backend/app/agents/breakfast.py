@@ -4,6 +4,7 @@ from app.prompts.breakfast import (
     RAG_QUERY_USER_TEMPLATE,
     BREAKFAST_SYSTEM_TEMPLATE,
     BREAKFAST_USER_TEMPLATE,
+    RETRY_FEEDBACK_TEMPLATE,
     PREFERENCE_CLAUSE,
     NO_PREFERENCE,
     BREAKFAST_VALIDATOR_SYSTEM_PROMPT,
@@ -62,10 +63,19 @@ def generate_breakfast_suggestion(day: str, current_plan: list[dict]) -> dict:
     last_suggestion = None
     last_status = "failed"
     last_warnings: list[str] = []
+    # Without this the retry re-sends a byte-identical prompt and can only
+    # differ by sampling luck — naming what was rejected is what makes the
+    # loop converge.
+    rejected_notes: list[str] = []
 
     for attempt in range(MAX_RETRIES):
         # Step 3: LLM generates one breakfast
-        raw = claude_service.call_json(system_prompt, user_msg)
+        attempt_msg = user_msg
+        if rejected_notes:
+            attempt_msg += RETRY_FEEDBACK_TEMPLATE.format(
+                rejected_notes="\n".join(rejected_notes)
+            )
+        raw = claude_service.call_json(system_prompt, attempt_msg)
         if isinstance(raw, list):
             raw = raw[0]
 
@@ -111,7 +121,11 @@ def generate_breakfast_suggestion(day: str, current_plan: list[dict]) -> dict:
         if not errors:
             last_status = "passed_with_warnings" if warnings else "passed"
             break
-        elif attempt == MAX_RETRIES - 1:
+
+        rejected_notes.append(
+            f"- \"{suggestion['dish']}\" was rejected: {'; '.join(errors)}"
+        )
+        if attempt == MAX_RETRIES - 1:
             last_status = "failed"
             last_warnings = errors + warnings
 

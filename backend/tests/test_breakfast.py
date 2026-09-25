@@ -304,3 +304,24 @@ def test_remove_breakfast_rebuilds_the_shopping_list(mock_rebuild, current_plan)
 
     assert result["grocery_list"][0]["name"] == "flattened rice"
     assert result["shopping_validation_status"] == "passed"
+
+
+def test_retry_tells_the_llm_which_dish_was_rejected(mock_services, current_plan):
+    """Review Focus 4: an unchanged retry prompt can only differ by luck."""
+    _, _, mock_claude = mock_services
+    mock_claude.call_json.side_effect = [
+        {"day": "Monday", "meal_slot": "breakfast", "dish": "dal rice",
+         "prep_time_min": 20, "reason": "from history", "ingredients": ["lentils"]},
+        {"is_valid": False, "errors": ["Duplicate dish: dal rice"], "warnings": []},
+        {"day": "Monday", "meal_slot": "breakfast", "dish": "poha",
+         "prep_time_min": 15, "reason": "new", "ingredients": ["flattened rice"]},
+        {"is_valid": True, "errors": [], "warnings": []},
+    ]
+
+    generate_breakfast_suggestion("Monday", current_plan)
+
+    first_user_msg = mock_claude.call_json.call_args_list[0][0][1]
+    retry_user_msg = mock_claude.call_json.call_args_list[2][0][1]
+    assert "dal rice" not in first_user_msg
+    assert "dal rice" in retry_user_msg
+    assert "Duplicate dish: dal rice" in retry_user_msg

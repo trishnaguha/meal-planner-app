@@ -35,6 +35,12 @@ RELEVANT MEAL HISTORY:
 
 Generate the breakfast now."""
 
+RETRY_FEEDBACK_TEMPLATE = """
+
+The validator rejected these earlier attempts. Suggest a different dish and fix
+the issues listed:
+{rejected_notes}"""
+
 PREFERENCE_CLAUSE = "- User's dietary preference: {preference}. Prioritize meals that align with this preference."
 NO_PREFERENCE = ""
 
