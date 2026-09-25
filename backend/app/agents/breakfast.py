@@ -9,11 +9,13 @@ from app.prompts.breakfast import (
     BREAKFAST_VALIDATOR_SYSTEM_PROMPT,
     BREAKFAST_VALIDATOR_USER_TEMPLATE,
 )
+from app.agents.shopping_organiser import rebuild_grocery_list
 from app.services.preference_service import preference_service
 from app.services.chromadb_service import chroma_service
 from app.services.claude_service import claude_service
 
 MAX_RETRIES = 3
+SLOT_ORDER = {"breakfast": 0, "lunch": 1, "dinner": 2}
 
 
 def generate_breakfast_suggestion(day: str, current_plan: list[dict]) -> dict:
@@ -117,4 +119,53 @@ def generate_breakfast_suggestion(day: str, current_plan: list[dict]) -> dict:
         "suggestion": last_suggestion,
         "validation_status": last_status,
         "validation_warnings": last_warnings,
+    }
+
+
+def _order_plan(meal_plan: list[dict]) -> list[dict]:
+    """Sort meals breakfast/lunch/dinner within each day, preserving day order."""
+    day_order: list[str] = []
+    for meal in meal_plan:
+        if meal["day"] not in day_order:
+            day_order.append(meal["day"])
+    return sorted(
+        meal_plan,
+        key=lambda m: (day_order.index(m["day"]), SLOT_ORDER.get(m["meal_slot"], 99)),
+    )
+
+
+def add_breakfast(current_plan: list[dict], day: str, new_meal: dict) -> dict:
+    without_existing = [
+        m for m in current_plan
+        if not (m["day"] == day and m["meal_slot"] == "breakfast")
+    ]
+    breakfast = {
+        "day": day,
+        "meal_slot": "breakfast",
+        "dish": new_meal.get("dish", ""),
+        "prep_time_min": new_meal.get("prep_time_min", 0),
+        "reason": new_meal.get("reason", "new"),
+        "ingredients": new_meal.get("ingredients", []),
+    }
+    updated_plan = _order_plan(without_existing + [breakfast])
+
+    rebuilt = rebuild_grocery_list(updated_plan)
+    return {
+        "meal_plan": updated_plan,
+        "grocery_list": rebuilt["grocery_list"],
+        "shopping_validation_status": rebuilt["shopping_validation_status"],
+    }
+
+
+def remove_breakfast(current_plan: list[dict], day: str) -> dict:
+    updated_plan = [
+        m for m in current_plan
+        if not (m["day"] == day and m["meal_slot"] == "breakfast")
+    ]
+
+    rebuilt = rebuild_grocery_list(updated_plan)
+    return {
+        "meal_plan": updated_plan,
+        "grocery_list": rebuilt["grocery_list"],
+        "shopping_validation_status": rebuilt["shopping_validation_status"],
     }

@@ -2,7 +2,11 @@ from unittest.mock import patch
 
 import pytest
 
-from app.agents.breakfast import generate_breakfast_suggestion
+from app.agents.breakfast import (
+    generate_breakfast_suggestion,
+    add_breakfast,
+    remove_breakfast,
+)
 
 
 @pytest.fixture
@@ -170,3 +174,133 @@ def test_works_without_a_stored_preference(mock_services, current_plan):
     generate_breakfast_suggestion("Monday", current_plan)
 
     assert "Monday" in mock_claude.call.call_args[0][1]
+
+
+@pytest.fixture
+def mock_rebuild():
+    with patch("app.agents.shopping_organiser.claude_service") as mock_claude:
+        mock_claude.call_json.side_effect = [
+            [{"name": "flattened rice", "quantity": "500g",
+              "category": "grains_pantry", "used_in": ["poha"]}],
+            {"is_valid": True, "errors": [], "warnings": []},
+        ]
+        yield mock_claude
+
+
+BREAKFAST_MEAL = {
+    "day": "Monday", "meal_slot": "breakfast", "dish": "poha",
+    "prep_time_min": 15, "reason": "new", "ingredients": ["flattened rice", "onion"],
+}
+
+
+def test_add_breakfast_inserts_the_slot(mock_rebuild, current_plan):
+    result = add_breakfast(current_plan, "Monday", BREAKFAST_MEAL)
+
+    monday_breakfast = [
+        m for m in result["meal_plan"]
+        if m["day"] == "Monday" and m["meal_slot"] == "breakfast"
+    ]
+    assert len(monday_breakfast) == 1
+    assert monday_breakfast[0]["dish"] == "poha"
+    assert len(result["meal_plan"]) == len(current_plan) + 1
+
+
+def test_add_breakfast_orders_the_day_breakfast_lunch_dinner(mock_rebuild, current_plan):
+    result = add_breakfast(current_plan, "Monday", BREAKFAST_MEAL)
+
+    monday = [m["meal_slot"] for m in result["meal_plan"] if m["day"] == "Monday"]
+    assert monday == ["breakfast", "lunch", "dinner"]
+
+
+def test_add_breakfast_preserves_day_order(mock_rebuild, current_plan):
+    result = add_breakfast(current_plan, "Monday", BREAKFAST_MEAL)
+
+    seen = []
+    for m in result["meal_plan"]:
+        if m["day"] not in seen:
+            seen.append(m["day"])
+    assert seen == ["Monday", "Tuesday"]
+
+
+def test_add_breakfast_leaves_other_days_untouched(mock_rebuild, current_plan):
+    result = add_breakfast(current_plan, "Monday", BREAKFAST_MEAL)
+
+    tuesday = [m for m in result["meal_plan"] if m["day"] == "Tuesday"]
+    assert len(tuesday) == 1
+    assert tuesday[0]["dish"] == "rajma chawal"
+
+
+def test_add_breakfast_replaces_an_existing_breakfast(mock_rebuild, current_plan):
+    plan = [BREAKFAST_MEAL] + current_plan
+    replacement = {**BREAKFAST_MEAL, "dish": "masala oats"}
+
+    result = add_breakfast(plan, "Monday", replacement)
+
+    monday_breakfast = [
+        m for m in result["meal_plan"]
+        if m["day"] == "Monday" and m["meal_slot"] == "breakfast"
+    ]
+    assert len(monday_breakfast) == 1
+    assert monday_breakfast[0]["dish"] == "masala oats"
+
+
+def test_add_breakfast_rebuilds_the_shopping_list(mock_rebuild, current_plan):
+    result = add_breakfast(current_plan, "Monday", BREAKFAST_MEAL)
+
+    assert result["grocery_list"][0]["name"] == "flattened rice"
+    assert result["shopping_validation_status"] == "passed"
+
+
+def test_remove_breakfast_drops_the_slot(mock_rebuild, current_plan):
+    plan = [BREAKFAST_MEAL] + current_plan
+
+    result = remove_breakfast(plan, "Monday")
+
+    assert all(
+        not (m["day"] == "Monday" and m["meal_slot"] == "breakfast")
+        for m in result["meal_plan"]
+    )
+    assert len(result["meal_plan"]) == len(current_plan)
+
+
+def test_remove_breakfast_on_a_day_without_one_is_a_noop(mock_rebuild, current_plan):
+    result = remove_breakfast(current_plan, "Monday")
+
+    assert result["meal_plan"] == current_plan
+
+
+def test_remove_breakfast_only_affects_the_named_day(mock_rebuild, current_plan):
+    plan = [BREAKFAST_MEAL, {**BREAKFAST_MEAL, "day": "Tuesday", "dish": "idli"}] + current_plan
+
+    result = remove_breakfast(plan, "Monday")
+
+    tuesday_breakfast = [
+        m for m in result["meal_plan"]
+        if m["day"] == "Tuesday" and m["meal_slot"] == "breakfast"
+    ]
+    assert len(tuesday_breakfast) == 1
+    assert tuesday_breakfast[0]["dish"] == "idli"
+
+
+def test_remove_last_meal_of_a_day_empties_that_day(mock_rebuild):
+    """Review Focus 3: removing a breakfast that is the day's only meal."""
+    plan = [
+        {"day": "Monday", "meal_slot": "breakfast", "dish": "poha",
+         "prep_time_min": 15, "reason": "new", "ingredients": ["flattened rice"]},
+        {"day": "Tuesday", "meal_slot": "lunch", "dish": "rajma chawal",
+         "prep_time_min": 25, "reason": "from history", "ingredients": ["kidney beans"]},
+    ]
+
+    result = remove_breakfast(plan, "Monday")
+
+    assert all(m["day"] != "Monday" for m in result["meal_plan"])
+    assert len(result["meal_plan"]) == 1
+
+
+def test_remove_breakfast_rebuilds_the_shopping_list(mock_rebuild, current_plan):
+    plan = [BREAKFAST_MEAL] + current_plan
+
+    result = remove_breakfast(plan, "Monday")
+
+    assert result["grocery_list"][0]["name"] == "flattened rice"
+    assert result["shopping_validation_status"] == "passed"
