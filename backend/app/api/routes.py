@@ -7,6 +7,11 @@ from pydantic import BaseModel
 
 from app.agents.graph import build_graph
 from app.agents.single_meal_swap import generate_swap_suggestion, apply_swap
+from app.agents.breakfast import (
+    generate_breakfast_suggestion,
+    add_breakfast,
+    remove_breakfast,
+)
 from app.config import settings
 from app.services.chromadb_service import chroma_service
 from app.services.preference_service import preference_service
@@ -39,6 +44,15 @@ class SwapSingleMealRequest(BaseModel):
 class AcceptSwapRequest(BaseModel):
     day: str
     meal_slot: str
+    new_meal: dict
+
+
+class SuggestBreakfastRequest(BaseModel):
+    day: str
+
+
+class AcceptBreakfastRequest(BaseModel):
+    day: str
     new_meal: dict
 
 
@@ -222,6 +236,86 @@ async def accept_swap_endpoint(request: AcceptSwapRequest):
         meal_slot=request.meal_slot,
         new_meal=request.new_meal,
     )
+    _current_plan = {
+        **_current_plan,
+        "meal_plan": result["meal_plan"],
+        "grocery_list": result["grocery_list"],
+        "shopping_validation_status": result["shopping_validation_status"],
+    }
+    return result
+
+
+@router.post("/suggest-breakfast")
+async def suggest_breakfast(request: SuggestBreakfastRequest):
+    current_plan_meals = _current_plan.get("meal_plan", [])
+    if not current_plan_meals:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "No meal plan generated yet"},
+        )
+
+    return generate_breakfast_suggestion(
+        day=request.day,
+        current_plan=current_plan_meals,
+    )
+
+
+@router.post("/accept-breakfast")
+async def accept_breakfast_endpoint(request: AcceptBreakfastRequest):
+    global _current_plan
+    current_plan_meals = _current_plan.get("meal_plan", [])
+    if not current_plan_meals:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "No meal plan to update"},
+        )
+
+    if any(
+        m["day"] == request.day and m["meal_slot"] == "breakfast"
+        for m in current_plan_meals
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "status": "error",
+                "message": f"{request.day} already has a breakfast",
+            },
+        )
+
+    result = add_breakfast(
+        current_plan=current_plan_meals,
+        day=request.day,
+        new_meal=request.new_meal,
+    )
+    _current_plan = {
+        **_current_plan,
+        "meal_plan": result["meal_plan"],
+        "grocery_list": result["grocery_list"],
+        "shopping_validation_status": result["shopping_validation_status"],
+    }
+    return result
+
+
+@router.delete("/breakfast/{day}")
+async def remove_breakfast_endpoint(day: str):
+    global _current_plan
+    current_plan_meals = _current_plan.get("meal_plan", [])
+    if not current_plan_meals:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "No meal plan to update"},
+        )
+
+    if not any(
+        m["day"] == day and m["meal_slot"] == "breakfast"
+        for m in current_plan_meals
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": f"{day} has no breakfast"},
+        )
+
+    result = remove_breakfast(current_plan=current_plan_meals, day=day)
     _current_plan = {
         **_current_plan,
         "meal_plan": result["meal_plan"],

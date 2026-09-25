@@ -196,3 +196,137 @@ def test_accept_swap(client):
         data = response.json()
         assert data["meal_plan"][0]["dish"] == "keema paratha"
         assert len(data["grocery_list"]) > 0
+
+
+PLAN_WITH_LUNCH = {
+    "meal_plan": [
+        {"day": "Monday", "meal_slot": "lunch", "dish": "dal rice",
+         "prep_time_min": 20, "reason": "from history", "ingredients": ["lentils"]},
+    ],
+}
+
+PLAN_WITH_BREAKFAST = {
+    "meal_plan": [
+        {"day": "Monday", "meal_slot": "breakfast", "dish": "poha",
+         "prep_time_min": 15, "reason": "new", "ingredients": ["flattened rice"]},
+        {"day": "Monday", "meal_slot": "lunch", "dish": "dal rice",
+         "prep_time_min": 20, "reason": "from history", "ingredients": ["lentils"]},
+    ],
+}
+
+NEW_BREAKFAST = {
+    "day": "Monday", "meal_slot": "breakfast", "dish": "poha",
+    "prep_time_min": 15, "reason": "new", "ingredients": ["flattened rice"],
+}
+
+
+def test_suggest_breakfast(client):
+    with patch("app.api.routes.generate_breakfast_suggestion") as mock_generate:
+        from app.api import routes
+        routes._current_plan = dict(PLAN_WITH_LUNCH)
+        mock_generate.return_value = {
+            "suggestion": NEW_BREAKFAST,
+            "validation_status": "passed",
+            "validation_warnings": [],
+        }
+
+        response = client.post("/api/suggest-breakfast", json={"day": "Monday"})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["suggestion"]["dish"] == "poha"
+        assert data["suggestion"]["meal_slot"] == "breakfast"
+        assert data["validation_status"] == "passed"
+
+
+def test_suggest_breakfast_no_plan(client):
+    from app.api import routes
+    routes._current_plan = {}
+
+    response = client.post("/api/suggest-breakfast", json={"day": "Monday"})
+
+    assert response.status_code == 400
+
+
+def test_accept_breakfast(client):
+    with patch("app.api.routes.add_breakfast") as mock_add:
+        from app.api import routes
+        routes._current_plan = dict(PLAN_WITH_LUNCH)
+        mock_add.return_value = {
+            "meal_plan": PLAN_WITH_BREAKFAST["meal_plan"],
+            "grocery_list": [{"name": "flattened rice", "quantity": "500g",
+                              "category": "grains_pantry", "used_in": ["poha"]}],
+            "shopping_validation_status": "passed",
+        }
+
+        response = client.post(
+            "/api/accept-breakfast",
+            json={"day": "Monday", "new_meal": NEW_BREAKFAST},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["meal_plan"][0]["meal_slot"] == "breakfast"
+        assert routes._current_plan["meal_plan"][0]["dish"] == "poha"
+
+
+def test_accept_breakfast_no_plan(client):
+    from app.api import routes
+    routes._current_plan = {}
+
+    response = client.post(
+        "/api/accept-breakfast",
+        json={"day": "Monday", "new_meal": NEW_BREAKFAST},
+    )
+
+    assert response.status_code == 400
+
+
+def test_accept_breakfast_rejects_a_day_that_already_has_one(client):
+    """Review Focus 5: a second insert must be refused, not produce two rows."""
+    from app.api import routes
+    routes._current_plan = dict(PLAN_WITH_BREAKFAST)
+
+    response = client.post(
+        "/api/accept-breakfast",
+        json={"day": "Monday", "new_meal": NEW_BREAKFAST},
+    )
+
+    assert response.status_code == 400
+    assert "already" in response.json()["message"].lower()
+
+
+def test_remove_breakfast(client):
+    with patch("app.api.routes.remove_breakfast") as mock_remove:
+        from app.api import routes
+        routes._current_plan = dict(PLAN_WITH_BREAKFAST)
+        mock_remove.return_value = {
+            "meal_plan": PLAN_WITH_LUNCH["meal_plan"],
+            "grocery_list": [],
+            "shopping_validation_status": "passed",
+        }
+
+        response = client.delete("/api/breakfast/Monday")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert all(m["meal_slot"] != "breakfast" for m in data["meal_plan"])
+        assert routes._current_plan["meal_plan"] == PLAN_WITH_LUNCH["meal_plan"]
+
+
+def test_remove_breakfast_no_plan(client):
+    from app.api import routes
+    routes._current_plan = {}
+
+    response = client.delete("/api/breakfast/Monday")
+
+    assert response.status_code == 400
+
+
+def test_remove_breakfast_when_the_day_has_none(client):
+    from app.api import routes
+    routes._current_plan = dict(PLAN_WITH_LUNCH)
+
+    response = client.delete("/api/breakfast/Monday")
+
+    assert response.status_code == 400
