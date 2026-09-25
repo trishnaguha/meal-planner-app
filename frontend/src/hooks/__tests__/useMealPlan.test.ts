@@ -17,6 +17,9 @@ vi.mock("@/lib/api", () => ({
     savePreferences: vi.fn(),
     swapSingleMeal: vi.fn(),
     acceptSwap: vi.fn(),
+    suggestBreakfast: vi.fn(),
+    acceptBreakfast: vi.fn(),
+    removeBreakfast: vi.fn(),
   },
 }));
 
@@ -84,8 +87,8 @@ describe("useMealPlan per-meal swap", () => {
       await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
     });
 
-    expect(result.current.swapSuggestion?.suggestedMeal.dish).toBe("Paneer Wrap");
-    expect(result.current.swappingMeal).toBeNull();
+    expect(result.current.mealSuggestion?.suggestedMeal.dish).toBe("Paneer Wrap");
+    expect(result.current.pendingMeal).toBeNull();
   });
 
   it("clears the in-flight flag when the suggestion is rejected", async () => {
@@ -96,11 +99,11 @@ describe("useMealPlan per-meal swap", () => {
       await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
     });
     act(() => {
-      result.current.rejectSwap();
+      result.current.rejectSuggestion();
     });
 
-    expect(result.current.swapSuggestion).toBeNull();
-    expect(result.current.swappingMeal).toBeNull();
+    expect(result.current.mealSuggestion).toBeNull();
+    expect(result.current.pendingMeal).toBeNull();
   });
 
   it("re-triggers the swap after a reject and returns a fresh suggestion", async () => {
@@ -113,15 +116,15 @@ describe("useMealPlan per-meal swap", () => {
       await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
     });
     act(() => {
-      result.current.rejectSwap();
+      result.current.rejectSuggestion();
     });
     await act(async () => {
       await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
     });
 
     expect(api.swapSingleMeal).toHaveBeenCalledTimes(2);
-    expect(result.current.swapSuggestion?.suggestedMeal.dish).toBe("Chana Masala");
-    expect(result.current.swappingMeal).toBeNull();
+    expect(result.current.mealSuggestion?.suggestedMeal.dish).toBe("Chana Masala");
+    expect(result.current.pendingMeal).toBeNull();
   });
 
   it("clears the in-flight flag and sets error when the swap request fails", async () => {
@@ -132,7 +135,7 @@ describe("useMealPlan per-meal swap", () => {
       await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
     });
 
-    expect(result.current.swappingMeal).toBeNull();
+    expect(result.current.pendingMeal).toBeNull();
     expect(result.current.error).toBe("boom");
   });
 
@@ -145,11 +148,11 @@ describe("useMealPlan per-meal swap", () => {
       await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
     });
     await act(async () => {
-      await result.current.acceptSwap();
+      await result.current.acceptSuggestion();
     });
 
-    expect(result.current.swappingMeal).toBeNull();
-    expect(result.current.swapSuggestion?.suggestedMeal.dish).toBe("Paneer Wrap");
+    expect(result.current.pendingMeal).toBeNull();
+    expect(result.current.mealSuggestion?.suggestedMeal.dish).toBe("Paneer Wrap");
     expect(result.current.error).toBe("accept failed");
   });
 
@@ -165,11 +168,11 @@ describe("useMealPlan per-meal swap", () => {
       await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
     });
     await act(async () => {
-      await result.current.acceptSwap();
+      await result.current.acceptSuggestion();
     });
 
-    expect(result.current.swapSuggestion).toBeNull();
-    expect(result.current.swappingMeal).toBeNull();
+    expect(result.current.mealSuggestion).toBeNull();
+    expect(result.current.pendingMeal).toBeNull();
     expect(result.current.mealPlan[0].dish).toBe("Paneer Wrap");
   });
 
@@ -186,13 +189,13 @@ describe("useMealPlan per-meal swap", () => {
       void result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
     });
     await waitFor(() => {
-      expect(result.current.swappingMeal).toEqual({ day: "Monday", mealSlot: "lunch" });
+      expect(result.current.pendingMeal).toEqual({ day: "Monday", mealSlot: "lunch" });
     });
 
     await act(async () => {
       resolveSwap(suggestionResponse("Paneer Wrap"));
     });
-    expect(result.current.swappingMeal).toBeNull();
+    expect(result.current.pendingMeal).toBeNull();
   });
 
   it("ignores a stale response when a second slot swap supersedes the first", async () => {
@@ -225,8 +228,8 @@ describe("useMealPlan per-meal swap", () => {
     });
 
     // Still waiting on the dinner request, so the dinner slot keeps its spinner.
-    expect(result.current.swappingMeal).toEqual({ day: "Monday", mealSlot: "dinner" });
-    expect(result.current.swapSuggestion).toBeNull();
+    expect(result.current.pendingMeal).toEqual({ day: "Monday", mealSlot: "dinner" });
+    expect(result.current.mealSuggestion).toBeNull();
 
     await act(async () => {
       resolveSecond({
@@ -242,9 +245,9 @@ describe("useMealPlan per-meal swap", () => {
       });
     });
 
-    expect(result.current.swappingMeal).toBeNull();
-    expect(result.current.swapSuggestion?.mealSlot).toBe("dinner");
-    expect(result.current.swapSuggestion?.suggestedMeal.dish).toBe("Veg Pulao");
+    expect(result.current.pendingMeal).toBeNull();
+    expect(result.current.mealSuggestion?.mealSlot).toBe("dinner");
+    expect(result.current.mealSuggestion?.suggestedMeal.dish).toBe("Veg Pulao");
   });
 
   it("does not clear another slot's spinner when an accept settles", async () => {
@@ -261,7 +264,7 @@ describe("useMealPlan per-meal swap", () => {
       })
     );
     act(() => {
-      void result.current.acceptSwap();
+      void result.current.acceptSuggestion();
     });
 
     // While the accept is in flight the user starts a swap on another slot.
@@ -271,14 +274,14 @@ describe("useMealPlan per-meal swap", () => {
     act(() => {
       void result.current.swapSingleMeal("Monday", "dinner", "Roti Sabzi");
     });
-    expect(result.current.swappingMeal).toEqual({ day: "Monday", mealSlot: "dinner" });
+    expect(result.current.pendingMeal).toEqual({ day: "Monday", mealSlot: "dinner" });
 
     await act(async () => {
       resolveAccept(PLAN_RESPONSE);
     });
 
     // The dinner request is still running, so its spinner must survive.
-    expect(result.current.swappingMeal).toEqual({ day: "Monday", mealSlot: "dinner" });
+    expect(result.current.pendingMeal).toEqual({ day: "Monday", mealSlot: "dinner" });
   });
 
   it("drops a pending per-meal suggestion when the whole plan is regenerated", async () => {
@@ -308,8 +311,135 @@ describe("useMealPlan per-meal swap", () => {
       resolveSwap(suggestionResponse("Stale Suggestion"));
     });
 
-    expect(result.current.swapSuggestion).toBeNull();
-    expect(result.current.swappingMeal).toBeNull();
+    expect(result.current.mealSuggestion).toBeNull();
+    expect(result.current.pendingMeal).toBeNull();
     expect(result.current.mealPlan[0].dish).toBe("Rajma Chawal");
+  });
+});
+
+describe("useMealPlan breakfast", () => {
+  const BREAKFAST = {
+    day: "Monday",
+    meal_slot: "breakfast",
+    dish: "Poha",
+    prep_time_min: 15,
+    reason: "new",
+    ingredients: ["flattened rice"],
+  };
+
+  function breakfastResponse(dish: string) {
+    return {
+      suggestion: { ...BREAKFAST, dish },
+      validation_status: "passed",
+      validation_warnings: [],
+    };
+  }
+
+  it("stores a breakfast suggestion with no original meal", async () => {
+    vi.mocked(api.suggestBreakfast).mockResolvedValue(breakfastResponse("Poha"));
+    const result = await renderWithPlan();
+
+    await act(async () => {
+      await result.current.suggestBreakfast("Monday");
+    });
+
+    expect(result.current.mealSuggestion).toEqual({
+      kind: "breakfast",
+      day: "Monday",
+      mealSlot: "breakfast",
+      suggestedMeal: { ...BREAKFAST, dish: "Poha" },
+    });
+    expect(result.current.pendingMeal).toBeNull();
+  });
+
+  it("re-requests a breakfast after the user rejects one", async () => {
+    // Review Focus 1: the reject-then-retry wedge, on the breakfast path.
+    vi.mocked(api.suggestBreakfast)
+      .mockResolvedValueOnce(breakfastResponse("Poha"))
+      .mockResolvedValueOnce(breakfastResponse("Masala Oats"));
+    const result = await renderWithPlan();
+
+    await act(async () => {
+      await result.current.suggestBreakfast("Monday");
+    });
+    act(() => {
+      result.current.rejectSuggestion();
+    });
+    expect(result.current.mealSuggestion).toBeNull();
+
+    await act(async () => {
+      await result.current.suggestBreakfast("Monday");
+    });
+
+    expect(api.suggestBreakfast).toHaveBeenCalledTimes(2);
+    expect(result.current.mealSuggestion?.suggestedMeal.dish).toBe("Masala Oats");
+  });
+
+  it("routes accept to acceptBreakfast for a breakfast suggestion", async () => {
+    vi.mocked(api.suggestBreakfast).mockResolvedValue(breakfastResponse("Poha"));
+    vi.mocked(api.acceptBreakfast).mockResolvedValue(PLAN_RESPONSE);
+    const result = await renderWithPlan();
+
+    await act(async () => {
+      await result.current.suggestBreakfast("Monday");
+    });
+    await act(async () => {
+      await result.current.acceptSuggestion();
+    });
+
+    expect(api.acceptBreakfast).toHaveBeenCalledWith("Monday", {
+      ...BREAKFAST,
+      dish: "Poha",
+    });
+    expect(api.acceptSwap).not.toHaveBeenCalled();
+    expect(result.current.mealSuggestion).toBeNull();
+  });
+
+  it("lets a breakfast suggestion supersede an open swap suggestion", async () => {
+    // Review Focus 2: single-suggestion state, newer wins, no stale spinner.
+    vi.mocked(api.swapSingleMeal).mockResolvedValue(suggestionResponse("Paneer Wrap"));
+    vi.mocked(api.suggestBreakfast).mockResolvedValue(breakfastResponse("Poha"));
+    const result = await renderWithPlan();
+
+    await act(async () => {
+      await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
+    });
+    expect(result.current.mealSuggestion?.kind).toBe("swap");
+
+    await act(async () => {
+      await result.current.suggestBreakfast("Tuesday");
+    });
+
+    expect(result.current.mealSuggestion?.kind).toBe("breakfast");
+    expect(result.current.mealSuggestion?.day).toBe("Tuesday");
+    expect(result.current.pendingMeal).toBeNull();
+  });
+
+  it("surfaces an error when the breakfast request fails", async () => {
+    vi.mocked(api.suggestBreakfast).mockRejectedValue(new Error("Network Error"));
+    const result = await renderWithPlan();
+
+    await act(async () => {
+      await result.current.suggestBreakfast("Monday");
+    });
+
+    expect(result.current.error).toBe("Network Error");
+    expect(result.current.pendingMeal).toBeNull();
+  });
+
+  it("drops a pending breakfast suggestion when the breakfast is removed", async () => {
+    vi.mocked(api.suggestBreakfast).mockResolvedValue(breakfastResponse("Poha"));
+    vi.mocked(api.removeBreakfast).mockResolvedValue(PLAN_RESPONSE);
+    const result = await renderWithPlan();
+
+    await act(async () => {
+      await result.current.suggestBreakfast("Monday");
+    });
+    await act(async () => {
+      await result.current.removeBreakfast("Monday");
+    });
+
+    expect(api.removeBreakfast).toHaveBeenCalledWith("Monday");
+    expect(result.current.mealSuggestion).toBeNull();
   });
 });
