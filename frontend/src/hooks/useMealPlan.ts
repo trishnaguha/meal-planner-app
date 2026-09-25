@@ -23,7 +23,17 @@ export function useMealPlan() {
   } | null>(null);
   const swapRequestId = useRef(0);
 
+  // A whole-plan change invalidates any per-meal suggestion — it was computed
+  // against a plan that no longer exists — and any per-meal request still in
+  // flight, whose response would otherwise land on the new plan.
+  const invalidatePendingSwap = () => {
+    swapRequestId.current += 1;
+    setSwapSuggestion(null);
+    setSwappingMeal(null);
+  };
+
   const generate = async () => {
+    invalidatePendingSwap();
     setIsLoading(true);
     setError(null);
     try {
@@ -42,6 +52,7 @@ export function useMealPlan() {
   };
 
   const swap = async () => {
+    invalidatePendingSwap();
     setIsLoading(true);
     setError(null);
     try {
@@ -111,7 +122,7 @@ export function useMealPlan() {
 
   const acceptSwap = async () => {
     if (!swapSuggestion) return false;
-    swapRequestId.current += 1;
+    const requestId = ++swapRequestId.current;
     setIsLoading(true);
     setError(null);
     try {
@@ -131,14 +142,14 @@ export function useMealPlan() {
       return false;
     } finally {
       setIsLoading(false);
-      setSwappingMeal(null);
+      if (requestId === swapRequestId.current) {
+        setSwappingMeal(null);
+      }
     }
   };
 
   const rejectSwap = () => {
-    swapRequestId.current += 1;
-    setSwapSuggestion(null);
-    setSwappingMeal(null);
+    invalidatePendingSwap();
   };
 
   return {

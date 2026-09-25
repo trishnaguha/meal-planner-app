@@ -26,6 +26,7 @@ export default function Home() {
     rejectSwap,
     swapSuggestion,
     swappingMeal,
+    error,
   } = useMealPlan();
 
   useEffect(() => {
@@ -122,6 +123,7 @@ export default function Home() {
               onAcceptSwap={handleAcceptSwap}
               onRejectSwap={handleRejectSwap}
               isAccepting={isAccepting}
+              swapError={error}
             />
           </div>
         </div>

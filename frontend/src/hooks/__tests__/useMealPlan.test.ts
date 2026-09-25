@@ -246,4 +246,70 @@ describe("useMealPlan per-meal swap", () => {
     expect(result.current.swapSuggestion?.mealSlot).toBe("dinner");
     expect(result.current.swapSuggestion?.suggestedMeal.dish).toBe("Veg Pulao");
   });
+
+  it("does not clear another slot's spinner when an accept settles", async () => {
+    const result = await renderWithPlan();
+    vi.mocked(api.swapSingleMeal).mockResolvedValueOnce(suggestionResponse("Paneer Wrap"));
+    await act(async () => {
+      await result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
+    });
+
+    let resolveAccept: (v: MealPlanResponse) => void = () => {};
+    vi.mocked(api.acceptSwap).mockReturnValue(
+      new Promise<MealPlanResponse>((r) => {
+        resolveAccept = r;
+      })
+    );
+    act(() => {
+      void result.current.acceptSwap();
+    });
+
+    // While the accept is in flight the user starts a swap on another slot.
+    vi.mocked(api.swapSingleMeal).mockReturnValueOnce(
+      new Promise<SwapSingleMealResponse>(() => {})
+    );
+    act(() => {
+      void result.current.swapSingleMeal("Monday", "dinner", "Roti Sabzi");
+    });
+    expect(result.current.swappingMeal).toEqual({ day: "Monday", mealSlot: "dinner" });
+
+    await act(async () => {
+      resolveAccept(PLAN_RESPONSE);
+    });
+
+    // The dinner request is still running, so its spinner must survive.
+    expect(result.current.swappingMeal).toEqual({ day: "Monday", mealSlot: "dinner" });
+  });
+
+  it("drops a pending per-meal suggestion when the whole plan is regenerated", async () => {
+    const result = await renderWithPlan();
+
+    let resolveSwap: (v: SwapSingleMealResponse) => void = () => {};
+    vi.mocked(api.swapSingleMeal).mockReturnValue(
+      new Promise<SwapSingleMealResponse>((r) => {
+        resolveSwap = r;
+      })
+    );
+    act(() => {
+      void result.current.swapSingleMeal("Monday", "lunch", "Dal Rice");
+    });
+
+    // Whole-plan swap lands first and replaces every meal.
+    vi.mocked(api.swapMeal).mockResolvedValue({
+      ...PLAN_RESPONSE,
+      meal_plan: [{ ...PLAN[0], dish: "Rajma Chawal" }, PLAN[1]],
+    });
+    await act(async () => {
+      await result.current.swap();
+    });
+
+    // The per-meal response arrives afterwards, computed against the old plan.
+    await act(async () => {
+      resolveSwap(suggestionResponse("Stale Suggestion"));
+    });
+
+    expect(result.current.swapSuggestion).toBeNull();
+    expect(result.current.swappingMeal).toBeNull();
+    expect(result.current.mealPlan[0].dish).toBe("Rajma Chawal");
+  });
 });

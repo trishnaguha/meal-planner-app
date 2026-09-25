@@ -24,6 +24,7 @@ interface Props {
   onAcceptSwap?: () => void;
   onRejectSwap?: () => void;
   isAccepting?: boolean;
+  swapError?: string | null;
 }
 
 const DAYS = [
@@ -49,6 +50,7 @@ export default function MealPlanPanel({
   onAcceptSwap,
   onRejectSwap,
   isAccepting,
+  swapError,
 }: Props) {
   const groupedByDay = DAYS.map((day) => ({
     day,
@@ -136,6 +138,12 @@ export default function MealPlanPanel({
                 />
               ))}
             </div>
+
+            {swapError && (
+              <div className="mt-3">
+                <StatusIndicator status="error" message={swapError} />
+              </div>
+            )}
 
             {validationWarnings && validationWarnings.length > 0 && (
               <div className="mt-3 space-y-1">
