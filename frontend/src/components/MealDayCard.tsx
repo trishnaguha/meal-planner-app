@@ -103,8 +103,7 @@ export default function MealDayCard({
                   </button>
                 )}
               </div>
-              {isSwapping &&
-                swapSuggestion &&
+              {swapSuggestion &&
                 swapSuggestion.day === day &&
                 swapSuggestion.mealSlot === meal.meal_slot &&
                 onAcceptSwap &&

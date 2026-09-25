@@ -97,8 +97,9 @@ export function useMealPlan() {
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to swap meal");
-      setSwappingMeal(null);
       return null;
+    } finally {
+      setSwappingMeal(null);
     }
   };
 
@@ -117,18 +118,19 @@ export function useMealPlan() {
       setValidationStatus(data.validation_status);
       setValidationWarnings(data.validation_warnings || []);
       setSwapSuggestion(null);
-      setSwappingMeal(null);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to accept swap");
       return false;
     } finally {
       setIsLoading(false);
+      setSwappingMeal(null);
     }
   };
 
   const rejectSwap = () => {
     setSwapSuggestion(null);
+    setSwappingMeal(null);
   };
 
   return {
